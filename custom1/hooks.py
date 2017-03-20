@@ -16,9 +16,24 @@ fixtures = ["Report"]
 # Includes in <head>
 # ------------------
 
+app_include_js = [
+	"assets/js/desk1.min.js",
+	"assets/js/list1.min.js",
+	"assets/js/form1.min.js",
+	"assets/js/erpnext1.min.js"
+]
+
+app_include_css = [
+	"assets/css/desk1.min.css"
+]
+
 # include js, css files in header of desk.html
 # app_include_css = "/assets/custom1/css/custom1.css"
 # app_include_js = "/assets/custom1/js/custom1.js"
+
+website_context = {
+	"splash_image": "/assets/custom1/images/splash.png"
+}
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"

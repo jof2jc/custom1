@@ -205,9 +205,11 @@ body[data-route="desktop"] .navbar-set-desktop-icons {
 }
 .help-message-wrapper h5 {
   margin-top: 5px;
+  display: none !Important;
 }
 .help-message-wrapper .help-message-item {
   font-size: 12px;
+  display: none !Important;
 }
 .help-message-wrapper .octicon {
   color: #8D99A6;

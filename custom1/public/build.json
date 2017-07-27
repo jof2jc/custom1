@@ -4,7 +4,8 @@
 		"public/js/frappe/misc/help_links.js",
 		"public/js/frappe/ui/toolbar/navbar.html",
 		"public/js/frappe/ui/toolbar/search.js",
-		"public/js/frappe/change_log.html"
+		"public/js/frappe/change_log.html",
+		"public/js/frappe/misc/hide_help_menu.js"
 	],
 	"js/form1.min.js": [
 		"public/js/frappe/form/templates/form_sidebar.html"
@@ -13,8 +14,11 @@
 		"public/js/frappe/list/list_sidebar.html"
 	],
 	 "js/erpnext1.min.js": [
-        "public/js/conf.js",
-	"public/js/help_links.js"
+	        "public/js/conf.js",
+		"public/js/help_links.js"
+    	],
+	 "css/desk1.min.css": [
+       		 "public/css/desktop.css"
     	]
 
 }

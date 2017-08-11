@@ -25,22 +25,16 @@ def execute(filters=None):
 		party_details = get_party_details(sle.item_code, sle.voucher_type, sle.voucher_no)
 		if sle.voucher_type in ("Sales Invoice", "Purchase Invoice", "Purchase Receipt", "Delivery Note"): 
 			party = party_details[sle.voucher_no]
-			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
-				item_detail.brand, item_detail.description, sle.warehouse,
-				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
-				(sle.incoming_rate if sle.actual_qty > 0 else 0.0), # party.outgoing_rate, 
-				sle.valuation_rate, sle.stock_value, party.party, 
-				sle.voucher_type, sle.voucher_no, party.party_type,
-				sle.batch_no, sle.serial_no, sle.company])
-		else:
-			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
-				item_detail.brand, item_detail.description, sle.warehouse,
-				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
-				(sle.incoming_rate if sle.actual_qty > 0 else 0.0), # 0.0, 
-				sle.valuation_rate, sle.stock_value, "",
-				sle.voucher_type, sle.voucher_no, "",
-				sle.batch_no, sle.serial_no, sle.company])
-	
+
+		data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
+			item_detail.brand, item_detail.description, sle.warehouse,
+			item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
+			(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), # party.outgoing_rate, 
+			(sle.valuation_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
+			(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.party if party else ""), 
+			sle.voucher_type, sle.voucher_no, (party.party_type if party else ""),
+			sle.batch_no, sle.serial_no, sle.company])
+
 	return columns, data
 
 def get_columns():

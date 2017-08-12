@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 
-from frappe.utils import nowdate, now_datetime
 import json
 from frappe.utils import flt, cstr, nowdate, nowtime
 
@@ -11,13 +10,16 @@ def set_return_details(self, method):
 	print company
 	#frappe.throw(_("Company is {0}").format(company))
 
-	if company != "TOKO GALAXY":
+	if company != "IMPERIAL MEGA PRIMA":
 		return
 	if self.doctype not in ("Stock Entry", "Sales Invoice", "Purchase Invoice"):
 		return
 
 	for d in self.items:
 		serial_nos = cstr(d.serial_no).strip().replace(',', '\n').split('\n')
+		print serial_nos
+		if not serial_nos:
+			return
 
 		for imei in serial_nos:
 			serial_doc = frappe.get_doc("Serial No", imei)

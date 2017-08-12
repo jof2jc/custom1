@@ -91,6 +91,18 @@ website_context = {
 # 		"on_trash": "method"
 #	}
 # }
+doc_events = {
+    "Stock Entry": {
+        "on_submit": "custom1.custom1.custom_imei.set_return_details"
+    },
+    "Sales Invoice": {
+        "on_submit": "custom1.custom1.custom_imei.set_return_details"
+    },
+    "Purchase Invoice": {
+        "on_submit": "custom1.custom1.custom_imei.set_return_details"
+    }
+}
+
 
 # Scheduled Tasks
 # ---------------

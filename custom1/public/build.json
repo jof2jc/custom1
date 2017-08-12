@@ -7,7 +7,6 @@
 		"public/js/frappe/change_log.html",
 		"public/js/frappe/misc/req.js",
 		"public/js/frappe/misc/hide_help_menu.js",
-		"public/js/asset/asset_list.js",
 		"public/js/utils.js"
 	],
 	"js/form1.min.js": [

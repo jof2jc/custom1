@@ -25,13 +25,17 @@ def set_return_details(self, method):
 			serial_doc = frappe.get_doc("Serial No", imei)
 
 			print self.doctype
-			print imei 
+			print self.ship_to_service_supplier 
 
 			if self.doctype == "Stock Entry":
-				if (self.return_from_customer and self.purpose == "Material Receipt"):
+				if (self.return_from_customer and self.purpose in ("Material Receipt", "Material Issue")):
 					serial_doc.return_from_customer = self.return_from_customer
 				elif (self.ship_to_service_supplier and self.purpose == "Material Transfer"):
+					print self.ship_to_service_supplier
 					serial_doc.ship_to_service_supplier = self.ship_to_service_supplier
+				elif self.purpose == "Material Issue":
+					serial_doc.ship_to_service_supplier = ""
+					serial_doc.return_from_customer = ""
 			else:
 				serial_doc.ship_to_service_supplier = ""
 				serial_doc.return_from_customer = ""

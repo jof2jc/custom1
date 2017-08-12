@@ -15,20 +15,18 @@ class IMEIStockOpname(Document):
 		data={}
 		#imei=['aaa','bbbb']
 
-		for d in self.items:
-			serial_nos = list(cstr(d.imei).strip().replace(',', '\n').split('\n'))
-			#for i in serial_nos:
-			#	imei.append(i)
+		#for d in self.items:
+		serial_nos = list(cstr(self.imei).strip().replace(',', '\n').split('\n'))
+		#for i in serial_nos:
+		#	imei.append(i)
 
-			print serial_nos
-
-			#has_batch_no = frappe.db.get_value('Item', d.item_code, 'has_batch_no')
+		print serial_nos
 			
-			data = frappe.db.sql("""SELECT name, item_code, warehouse FROM `tabSerial No` 
-					Where ifnull(delivery_document_no,'')='' And ifnull(delivery_date,'')='' 
-					And name NOT In %s AND warehouse=%s""", (tuple(serial_nos), d.warehouse), as_dict=1)
+		data = frappe.db.sql("""SELECT name, item_code, warehouse FROM `tabSerial No` 
+			Where ifnull(delivery_document_no,'')='' And ifnull(delivery_date,'')='' 
+			And name NOT In %s AND warehouse=%s""", (tuple(serial_nos), self.warehouse), as_dict=1)
 
-			print data
+		print data
 
 		self.set('not_scanned_imei', {}) #clear child table
 

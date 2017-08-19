@@ -97,6 +97,7 @@ doc_events = {
     },
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details"
+	#"before_save": "custom1.custom1.custom_imei.populate_item_details"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details"

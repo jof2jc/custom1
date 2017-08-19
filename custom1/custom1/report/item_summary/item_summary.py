@@ -68,7 +68,7 @@ def get_item_details():
 
 	item_map = frappe.db.sql("select it.name, it.item_group, it.item_name, it.description, bin.actual_qty, bin.warehouse, \
 		it.stock_uom, bin.valuation_rate from tabItem it left join tabBin bin on (it.name=bin.item_code and it.stock_uom = bin.stock_uom) \
-		order by it.item_code, it.item_group", as_dict=1)
+		where it.disabled <> 1 order by it.item_code, it.item_group", as_dict=1)
 	#print item_map
 
 	return item_map

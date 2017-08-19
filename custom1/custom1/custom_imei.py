@@ -5,6 +5,78 @@ from frappe import _
 import json
 from frappe.utils import flt, cstr, nowdate, nowtime
 
+@frappe.whitelist()
+def populate_item_details(self, method):
+	company = frappe.db.get_value("Global Defaults", None, "default_company") 
+	print company
+	#frappe.throw(_("Company is {0}").format(company))
+
+	if company != "IMPERIAL MEGA PRIMA":
+		return
+
+	#self.set('items', {}) #clear item
+	self.items = {}
+	row = {}
+
+	serial_nos = cstr(self.serial_nos).strip().replace(',', '\n').split('\n') if self.serial_nos else []
+
+	#remove dupicates
+	valid_serial_nos = []
+	for val in serial_nos:
+		if val:
+			val = val.strip()
+			if val not in valid_serial_nos:
+				valid_serial_nos.append(val)
+
+	for imei in valid_serial_nos:
+		from erpnext.stock.get_item_details import get_item_details, get_item_code
+		#from erpnext.stock.doctype.serial_no.serial_no import get_item_details import get_item_details
+		item_code = get_item_code(None, imei)
+
+		args = {
+				"company": company,
+				"currency": self.currency,
+				"customer": self.customer,
+				"price_list": self.selling_price_list,
+				"price_list_currency": self.price_list_currency,	
+				"conversion_rate": self.conversion_rate,
+				"plc_conversion_rate": self.plc_conversion_rate,
+				"is_pos": self.is_pos,
+				"item_code": item_code,
+				"update_stock": self.update_stock,
+				"transaction_date": self.posting_date,
+				"ignore_pricing_rule": self.ignore_pricing_rule,
+				"doctype": self.doctype
+			}
+
+		items_dict = get_item_details(args)
+
+		#check if imei exists in items
+		is_exists = 0
+		for item in self.items:
+			#item.serial_no = ""
+			#item_serial = cstr(item.serial_no).strip().replace(',', '\n').split('\n')
+
+			if item.item_code == item_code: #item is found, append imei
+				is_exists = 1
+				item.serial_no = item.serial_no + imei + "\n"	
+				item.qty += 1
+				
+		if is_exists == 0:
+			row = self.append("items", {})
+			row.serial_no = ""
+
+			for f in items_dict:
+				if not row.get(f):
+					row.set(f, items_dict.get(f))
+					if f == "rate":
+						row.set(f, items_dict.get("price_list_rate"))
+
+			row.serial_no = imei + "\n"
+	self.save()
+
+
+
 def set_return_details(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	print company
@@ -25,7 +97,7 @@ def set_return_details(self, method):
 			serial_doc = frappe.get_doc("Serial No", imei)
 
 			print self.doctype
-			print self.ship_to_service_supplier 
+			#print self.ship_to_service_supplier 
 
 			if self.doctype == "Stock Entry":
 				if (self.return_from_customer and self.purpose in ("Material Receipt", "Material Issue")):

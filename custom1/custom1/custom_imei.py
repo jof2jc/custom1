@@ -89,27 +89,47 @@ def set_return_details(self, method):
 
 	for d in self.items:
 		serial_nos = cstr(d.serial_no).strip().replace(',', '\n').split('\n')
-		print serial_nos
-		if not serial_nos:
-			return
+		print serial_nos  
+		
+		has_serial_no = frappe.db.get_value("Item", d.item_code, "has_serial_no")
 
-		for imei in serial_nos:
-			serial_doc = frappe.get_doc("Serial No", imei)
+		if has_serial_no and serial_nos:
 
-			print self.doctype
-			#print self.ship_to_service_supplier 
+			for imei in serial_nos:
+				serial_doc = frappe.get_doc("Serial No", imei)
 
-			if self.doctype == "Stock Entry":
-				if (self.return_from_customer and self.purpose in ("Material Receipt", "Material Issue")):
-					serial_doc.return_from_customer = self.return_from_customer
-				elif (self.ship_to_service_supplier and self.purpose == "Material Transfer"):
-					print self.ship_to_service_supplier
-					serial_doc.ship_to_service_supplier = self.ship_to_service_supplier
-				elif self.purpose == "Material Issue":
+				print self.doctype
+				#print self.ship_to_service_supplier 
+	
+				if self.doctype == "Stock Entry":
+					if (self.return_from_customer and self.purpose in ("Material Receipt", "Material Issue")):
+						serial_doc.return_from_customer = self.return_from_customer
+
+						if self.purpose == "Material Issue":
+							serial_doc.qty = 0
+
+					elif (self.ship_to_service_supplier and self.purpose == "Material Transfer"):
+						serial_doc.ship_to_service_supplier = self.ship_to_service_supplier
+						serial_doc.qty = 1
+
+					elif self.purpose == "Material Issue":
+						serial_doc.ship_to_service_supplier = ""
+						serial_doc.return_from_customer = ""
+						serial_doc.qty = 0
+				else:
 					serial_doc.ship_to_service_supplier = ""
 					serial_doc.return_from_customer = ""
-			else:
-				serial_doc.ship_to_service_supplier = ""
-				serial_doc.return_from_customer = ""
+	
+					if self.doctype == "Sales Invoice":
+						if self.is_return:
+							serial_doc.qty = 1
+						else:
+							serial_doc.qty = 0
+					elif self.doctype == "Purchase Invoice":
+						if self.is_return:
+							serial_doc.qty = 0
+						else:
+							serial_doc.qty = 1
 
-			serial_doc.save()
+				serial_doc.save()
+			

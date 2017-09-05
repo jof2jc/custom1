@@ -29,7 +29,7 @@ def execute(filters=None):
 		data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
 			item_detail.brand, item_detail.description, sle.warehouse,
 			item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
-			(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), # party.outgoing_rate, 
+			(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), party.outgoing_rate, 
 			(sle.valuation_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
 			(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.party if party else ""), 
 			sle.voucher_type, sle.voucher_no, (party.party_type if party else ""),
@@ -41,7 +41,7 @@ def get_columns():
 	return [_("Date") + ":Datetime:95", _("Item") + ":Link/Item:130", _("Item Name") + "::100", _("Item Group") + ":Link/Item Group:100",
 		_("Brand") + ":Link/Brand:100", _("Description") + "::200", _("Warehouse") + ":Link/Warehouse:100",
 		_("Stock UOM") + ":Link/UOM:100", _("Qty") + ":Float:50", _("Balance Qty") + ":Float:100",
-		_("Incoming Rate") + ":Currency:110", # _("Outgoing Rate") + ":Currency:110", 
+		_("Incoming Rate") + ":Currency:110", _("Outgoing Rate") + ":Currency:110", 
 		_("Valuation Rate") + ":Currency:110", _("Balance Value") + ":Currency:110",
 		_("Customer/Supplier") + ":Dynamic Link/Party Type:150",
 		_("Voucher Type") + "::110", _("Voucher #") + ":Dynamic Link/Voucher Type:100", 
@@ -71,6 +71,7 @@ def get_item_details(filters):
 
 def get_party_details(item_code,voucher_type,voucher_no):
 	party_details = {}
+
  	params = {
 		'item_code' : item_code,
 		'voucher_no' : voucher_no,
@@ -78,14 +79,14 @@ def get_party_details(item_code,voucher_type,voucher_no):
 	}
 
 	if voucher_type == "Sales Invoice":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, 0.0 as outgoing_rate
+       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
 			from `tabSales Invoice` dt, `tabSales Invoice Item` dt_item
-			where dt.name = dt_item.parent and dt_item.parent = %(voucher_no)s and dt_item.item_code = %(item_code)s""", params, as_dict=1):
+			where dt.name = dt_item.parent {party_conditions} limit 1""".format(party_conditions=get_party_conditions(item_code, voucher_no)), params, as_dict=1):
 			party_details.setdefault(party.parent, party) 
 	elif voucher_type == "Delivery Note":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, 0.0 as outgoing_rate
+       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
 			from `tabDelivery Note` dt, `tabDelivery Note Item` dt_item
-			where dt.name = dt_item.parent and dt_item.parent = %(voucher_no)s and dt_item.item_code = %(item_code)s""", params, as_dict=1):
+			where dt.name = dt_item.parent {party_conditions} limit 1""".format(party_conditions=get_party_conditions(item_code, voucher_no)), params, as_dict=1):
 			party_details.setdefault(party.parent, party)
 	elif voucher_type == "Purchase Invoice":
        		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.supplier as party, 'Supplier' as party_type, 0.0 as outgoing_rate
@@ -103,10 +104,15 @@ def get_party_details(item_code,voucher_type,voucher_no):
 
 def get_party_conditions(item_code, voucher_no):
 	conditions = []
-	if item_code:
-		conditions.append("dt_item.item_code=''")
+
+	parent_item = frappe.db.sql("""Select parent from `tabProduct Bundle Item` Where item_code=%s limit 1""", item_code, as_dict=0)
+	#if voucher_no == "MS/17/08/402-3":
+	#	frappe.throw(_("Item {0}, Parent is {1}").format(item_code, parent_item))
+
+	if item_code and not parent_item:
+		conditions.append("dt_item.item_code=%(item_code)s")
 	if voucher_no:
-		conditions.append("dt_item.parent=''")
+		conditions.append("dt_item.parent=%(voucher_no)s")
 
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
 

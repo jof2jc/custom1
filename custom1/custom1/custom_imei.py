@@ -121,12 +121,12 @@ def set_return_details(self, method):
 					serial_doc.return_from_customer = ""
 	
 					if self.doctype == "Sales Invoice":
-						if self.is_return:
+						if self.is_return or self.docstatus == 2:
 							serial_doc.qty = 1
 						else:
 							serial_doc.qty = 0
 					elif self.doctype == "Purchase Invoice":
-						if self.is_return:
+						if self.is_return or self.docstatus == 2:
 							serial_doc.qty = 0
 						else:
 							serial_doc.qty = 1

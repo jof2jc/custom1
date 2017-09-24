@@ -8,7 +8,7 @@
  "idx": 0, 
  "is_standard": "Yes", 
  "letter_head": "Standard", 
- "modified": "2017-08-04 16:20:20.568449", 
+ "modified": "2017-09-19 15:19:10.152124", 
  "modified_by": "Administrator", 
  "module": "Custom1", 
  "name": "STS Item Summary", 
@@ -18,10 +18,10 @@
  "report_type": "Script Report", 
  "roles": [
   {
-   "role": "Material User"
+   "role": "System Manager"
   }, 
   {
-   "role": "Accounts Manager"
+   "role": "Accounts User"
   }
  ]
 }

@@ -4,13 +4,20 @@
  "docstatus": 0, 
  "doctype": "Page", 
  "idx": 0, 
- "modified": "2017-07-25 12:40:22.487707", 
+ "modified": "2017-10-03 13:47:46.879474", 
  "modified_by": "Administrator", 
  "module": "Desk1", 
  "name": "modules", 
  "owner": "Administrator", 
  "page_name": "modules", 
- "roles": [], 
+ "roles": [
+  {
+   "role": "Accounts Manager"
+  }, 
+  {
+   "role": "Accounting"
+  }
+ ], 
  "script": null, 
  "standard": "Yes", 
  "style": null, 

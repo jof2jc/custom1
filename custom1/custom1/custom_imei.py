@@ -6,6 +6,12 @@ import json
 from frappe.utils import flt, cstr, nowdate, nowtime
 
 @frappe.whitelist()
+def imp_get_unpaid_installment_invoice(invoice_no):
+	return frappe.db.sql('''select si.name, it.installment_no, it.amount from `tabSales Invoice` si, `tabSales Invoice Installment` it 
+		where si.name=it.parent and si.name=%s and si.docstatus=1 and it.status="Unpaid"  
+		and it.amount > 0 Order By it.installment_no ASC limit 1''', invoice_no, as_dict=0)
+
+@frappe.whitelist()
 def populate_item_details(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	print company
@@ -132,4 +138,46 @@ def set_return_details(self, method):
 							serial_doc.qty = 1
 
 				serial_doc.save()
-			
+
+def imp_update_installment_payment_details(self, method):
+	company = frappe.db.get_value("Global Defaults", None, "default_company") 
+	print company
+	#frappe.throw(_("Company is {0}").format(company))
+
+	if company != "IMPERIAL MEGA PRIMA":
+		return
+
+	for d in self.references:
+		if d.reference_doctype == "Sales Invoice" and d.installment_no:
+			si = frappe.get_doc("Sales Invoice", d.reference_name)
+
+			for i in si.installments:
+				if i.installment_no == d.installment_no:
+					if self.docstatus == 1:
+						i.db_set("status", "Paid")
+						i.db_set("paid_date", self.posting_date)
+						i.db_set("payment_ref_name", self.name)
+					elif self.docstatus == 2:
+						i.db_set("status", "Unpaid")
+						i.db_set("paid_date", "")
+						i.db_set("payment_ref_name", "") 
+
+def imp_before_cancel_installment_payment(self, method):
+	company = frappe.db.get_value("Global Defaults", None, "default_company") 
+	print company
+	#frappe.throw(_("Company is {0}").format(company))
+
+	if company != "IMPERIAL MEGA PRIMA":
+		return
+
+	for d in self.references:
+		if d.reference_doctype == "Sales Invoice" and d.installment_no:
+			si = frappe.get_doc("Sales Invoice", d.reference_name)
+
+			for i in si.installments:
+				if i.installment_no == d.installment_no:
+					#if self.docstatus == 1:
+					i.db_set("status", "Unpaid")
+					i.db_set("paid_date", "")
+					i.db_set("payment_ref_name", "")
+

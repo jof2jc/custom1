@@ -101,7 +101,12 @@ doc_events = {
 	#"before_save": "custom1.custom1.custom_imei.populate_item_details"
     },
     "Purchase Invoice": {
-        "on_submit": "custom1.custom1.custom_imei.set_return_details"
+        "on_submit": "custom1.custom1.custom_imei.set_return_details",
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
+    },
+    "Payment Entry": {
+        "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
+	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
     }
 }
 

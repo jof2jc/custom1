@@ -59,7 +59,7 @@ frappe.call = function(opts) {
 	});
 }
 
-
+/*
 frappe.request.call = function(opts) {
 	frappe.request.prepare(opts);
 
@@ -210,6 +210,7 @@ frappe.request.call = function(opts) {
 			}
 		});
 }
+*/
 
 // call execute serverside request
 frappe.request.prepare = function(opts) {

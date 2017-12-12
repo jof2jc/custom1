@@ -16,6 +16,12 @@ def get_data():
 				},
 				{
 					"type": "report",
+					"name": "Item Summary",
+					"doctype": "Stock Ledger Entry",
+					"is_query_report": True
+				},
+				{
+					"type": "report",
 					"name": "Stock Ledger Detail",
 					"doctype": "testdoctype",
 					"is_query_report": True
@@ -52,6 +58,13 @@ def get_data():
 				},
 				{
 					"type": "report",
+					"name": "Tanda Terima",
+					"label": _("Tanda Terima Faktur"),
+					"doctype": "Sales Invoice",
+					"is_query_report": True
+				},
+				{
+					"type": "report",
 					"name": "Purchase Register",
 					"doctype": "Purchase Invoice",
 					"is_query_report": True
@@ -61,19 +74,7 @@ def get_data():
 					"name": "General Ledger",
 					"doctype": "GL Entry",
 					"is_query_report": True
-				},
-				{
-					"type": "report",
-					"name": "Balance Sheet",
-					"doctype": "GL Entry",
-					"is_query_report": True
-				},
-				{
-					"type": "report",
-					"name": "Profit and Loss Statement",
-					"doctype": "GL Entry",
-					"is_query_report": True
-				},
+				}				
 				
 			]
 		},
@@ -152,10 +153,48 @@ def get_data():
 			]
 		},
 		{
+			"label": _("Financial Reports"),
+			"icon": "icon-list",
+			"items": [
+					
+				{
+					"type": "report",
+					"name": "Trial Balance",
+					"doctype": "GL Entry",
+					"is_query_report": True
+				},
+				{
+					"type": "report",
+					"name": "Trial Balance for Party",
+					"doctype": "GL Entry",
+					"is_query_report": True
+				},
+				{
+					"type": "report",
+					"name": "Balance Sheet",
+					"doctype": "GL Entry",
+					"is_query_report": True
+				},
+				{
+					"type": "report",
+					"name": "Profit and Loss Statement",
+					"doctype": "GL Entry",
+					"is_query_report": True
+				}
+				                               
+			]
+		},
+		{
 			"label": _("Analytics"),
 			"icon": "icon-list",
 			"items": [
-
+					
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Profitability Analysis",
+					"doctype": "GL Entry"
+				},
 				{
 					"type": "page",
 					"name": "sales-analytics",

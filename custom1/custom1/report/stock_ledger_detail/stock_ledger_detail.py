@@ -107,13 +107,17 @@ def get_party_details(item_code,voucher_type,voucher_no):
 
 def get_party_conditions(item_code, voucher_no):
 	conditions = []
+	#parent_item = ""
 
-	parent_item = frappe.db.sql("""Select parent from `tabProduct Bundle Item` Where item_code=%s limit 1""", item_code, as_dict=0)
-	#if voucher_no == "MS/17/08/402-3":
+	parent_item = frappe.db.sql("""Select pb.name from `tabProduct Bundle` pb, `tabProduct Bundle Item` pi 
+			Where pb.name=pi.parent and pi.item_code=%s limit 1""", item_code, as_dict=0)
+	#if voucher_no == "MS/17/10/380" and item_code in ("EASY T LANCET STRIP MEDILANCE@","EASY TOUCH GLUKOSA STRIP@"):
 	#	frappe.throw(_("Item {0}, Parent is {1}").format(item_code, parent_item))
 
 	if item_code and not parent_item:
-		conditions.append("dt_item.item_code=%(item_code)s")
+		if frappe.db.get_value("Item",item_code,"is_stock_item"):
+			conditions.append("dt_item.item_code=%(item_code)s")
+
 	if voucher_no:
 		conditions.append("dt_item.parent=%(voucher_no)s")
 

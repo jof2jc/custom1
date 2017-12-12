@@ -1,0 +1,46 @@
+<h2 class="text-center">{%= __("Stock Balance Summary") %}</h2>
+<h5 class="text-center">{%= __("Periode : ") %}
+	{%= frappe.datetime.str_to_user(filters.from_date) %}
+	{%= __("sd") %}
+	{%= frappe.datetime.str_to_user(filters.to_date) %}
+</h5>
+{% var grand_total = 0; %}
+
+<table class="table table-bordered">
+	<thead>
+		<tr style="border-top: 1px solid; border-bottom: 1px solid;">
+				<th>{%= __("No") %}</th>
+				<th>{%= __("SKU") %}</th>
+				<th>{%= __("Item Name") %}</th>
+				<th>{%= __("Warehouse") %}</th>
+				<th>{%= __("UOM") %}</th>
+				<th>{%= __("Opening Qty") %}</th>
+				<th>{%= __("In Qty") %}</th>
+				<th>{%= __("Out Qty") %}</th>
+				<th>{%= __("Balance Qty") %}</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for(var i=0, l=data.length; i<l; i++) { %}
+		{% if (i < data.length) { %}
+			<tr>
+					<td>{%= i+1 %}</td>
+					<td>{%= data[i][__("Item")] %}</td>
+					<td>{%= data[i][__("Item Name")] %}</td>
+					<td>{%= data[i][__("Warehouse")] %}</td>
+					<td>{%= data[i][__("Stock UOM")] %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Opening Qty"].toLocaleString() %}</td>
+					<td style="text-align: right">
+						{%= data[i]["In Qty"].toLocaleString() %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Out Qty"].toLocaleString() %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Balance Qty"].toLocaleString() %}</td>
+					
+			</tr>
+			{% grand_total += data[i]["Grand Total"] %}
+		{% } %}
+		{% } %}		
+	</tbody>
+</table>

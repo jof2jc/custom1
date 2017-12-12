@@ -1,0 +1,42 @@
+
+<h2 class="text-left">{%= __("Sales Summary By Customer") %}</h2>
+<h4 class="text-left">{%= filters.customer %} </h4>
+<h5 class="text-left">{%= __("Periode : ") %}
+	{%= frappe.datetime.str_to_user(filters.from_date) %}
+	{%= __("sd") %}
+	{%= frappe.datetime.str_to_user(filters.to_date) %}
+</h5>
+{% var grand_total = 0; %}
+
+<table style="border-bottom: 1px solid;">
+	<thead>
+		<tr style="border-top: 1px solid; border-bottom: 1px solid;">
+				<th style="width: 5%">{%= __("No") %}</th>
+				<th style="width: 30%">{%= __("Customer") %}</th>
+				<th style="width: 30%; text-align: right;">{%= __("Grand Total") %}</th>
+				<th style="width: 35%; text-align: right;">{%= __("Outstanding Amount") %}</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for(var i=0, l=data.length; i<l; i++) { %}
+		{% if (i+1 < data.length) { %}
+			<tr>
+					<td>{%= i+1 %}</td>
+					<td>{%= data[i][__("Customer")] %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Grand Total"].toLocaleString() %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Outstanding Amount"].toLocaleString() %}</td>
+			</tr>
+			{% grand_total += data[i]["Grand Total"] %}
+		{% } %}
+		{% } %}
+		
+			<tr style="font-weight: bold;border-top: 1px solid;">
+					<td colspan=3 style="text-align: right">{%= __("TOTAL SALES IDR") %}</td>
+					<td style="text-align: right">
+						{%= grand_total.toLocaleString() %}</td>
+			</tr>
+		
+	</tbody>
+</table>

@@ -1,0 +1,24 @@
+{
+ "content": null, 
+ "creation": "2018-02-15 09:18:02.128745", 
+ "docstatus": 0, 
+ "doctype": "Page", 
+ "icon": "fa fa-upload", 
+ "idx": 0, 
+ "modified": "2018-02-15 09:24:45.316161", 
+ "modified_by": "Administrator", 
+ "module": "Custom1", 
+ "name": "import-invoice-tool", 
+ "owner": "Administrator", 
+ "page_name": "Import-Invoice-Tool", 
+ "roles": [
+  {
+   "role": "Accounts Manager"
+  }
+ ], 
+ "script": null, 
+ "standard": "Yes", 
+ "style": null, 
+ "system_page": 0, 
+ "title": "Import Invoice Tool"
+}

@@ -1,0 +1,53 @@
+[
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Purchase Invoice", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "raw_materials_supplied", 
+  "modified": "2016-06-27 00:31:53.320274", 
+  "name": "Purchase Invoice-raw_materials_supplied-permlevel", 
+  "property": "permlevel", 
+  "property_type": "Int", 
+  "value": "2"
+ }, 
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Item", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "hub_publishing_sb", 
+  "modified": "2017-12-22 00:03:27.118880", 
+  "name": "Item-hub_publishing_sb-hidden", 
+  "property": "hidden", 
+  "property_type": "Check", 
+  "value": "1"
+ }, 
+ {
+  "_assign": null, 
+  "_comments": null, 
+  "_liked_by": null, 
+  "_user_tags": null, 
+  "default_value": null, 
+  "doc_type": "Item", 
+  "docstatus": 0, 
+  "doctype": "Property Setter", 
+  "doctype_or_field": "DocField", 
+  "field_name": "hub_publishing_sb", 
+  "modified": "2017-12-22 00:03:27.124497", 
+  "name": "Item-hub_publishing_sb-permlevel", 
+  "property": "permlevel", 
+  "property_type": "Int", 
+  "value": "2"
+ }
+]

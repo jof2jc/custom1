@@ -122,6 +122,8 @@ def set_return_details(self, method):
 						serial_doc.ship_to_service_supplier = ""
 						serial_doc.return_from_customer = ""
 						serial_doc.qty = 0
+						if self.docstatus == 2:
+							serial_doc.qty = 1
 				else:
 					serial_doc.ship_to_service_supplier = ""
 					serial_doc.return_from_customer = ""

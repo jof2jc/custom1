@@ -9,10 +9,53 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "jof2jc@gmail.com"
 app_version = "0.0.1"
+'''
+fixtures = [    
+		{
+        		"doctype": "User",
+			"filters": {
+        				"email": ["=", ["mitra_gemilang16@yahoo.com"]],
+					"field_name": ["in", ["blocked_modules"]]
+        		}
 
-fixtures = ["Report"]
+    		},
+		{
+        		"doctype": "Report",
+		        "filters": {
+        				"name": ["in", ["SINV","PINV","DLN","SO","QUO","PREC","PO"]]
+        		}
 
+    		},                                                                                                                                              
+	        {
+        		"doctype": "Property Setter",
+		        "filters": {
+        				"doc_type": ["in", ["Sales Invoice","Purchase Invoice","Sales Order","Purchase Order"]],
+				        "field_name": ["in", ["subscription_section","raw_materials_supplied"]]
+        		}
 
+    		},
+		"Property Setter"
+]
+'''
+fixtures = [                                                                                                                                                  
+	        {
+        		"doctype": "Property Setter",
+		        "filters": {
+        				"doc_type": ["in", ["Sales Invoice","Purchase Invoice","Sales Order","Purchase Order","Item","Stock Settings"]],
+				        "field_name": ["in", ["subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field"]]
+        		}
+
+    		},
+		{
+        		"doctype": "Custom Field",
+		        "filters": {
+        				"dt": ["in", ["Sales Invoice"]],
+					"name": ["in", ["Sales Invoice-get_items", "Sales Invoice-serial_nos","Sales Invoice-clear"]]
+        		}
+
+    		}
+]
+	
 # Includes in <head>
 # ------------------
 
@@ -92,12 +135,17 @@ website_context = {
 #	}
 # }
 doc_events = {
+    "Item": {
+	"validate": "custom1.custom1.custom1.item_validate"
+    },
     "Stock Entry": {
-        "on_submit": "custom1.custom1.custom_imei.set_return_details"
+        "on_submit": "custom1.custom1.custom_imei.set_return_details",
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
     },
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
+	#"autoname": "custom1.custom1.custom1.si_autoname"
 	#"before_save": "custom1.custom1.custom_imei.populate_item_details"
     },
     "Purchase Invoice": {

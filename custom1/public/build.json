@@ -14,7 +14,8 @@
 		"public/js/frappe/form/multi_select_dialog.js"
 	],
 	"js/list1.min.js": [
-		"public/js/frappe/list/list_sidebar.html"
+		"public/js/frappe/list/list_sidebar.html",
+		"public/js/frappe/list/list_view.js"
 	],
 	 "js/erpnext1.min.js": [
 	        "public/js/conf.js",

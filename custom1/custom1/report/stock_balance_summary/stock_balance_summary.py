@@ -26,10 +26,11 @@ def execute(filters=None):
 						qty_dict.brand,
 						qty_dict.description, wh,
 						qty_dict.stock_uom, qty_dict.opening_qty,
-						qty_dict.opening_val, qty_dict.in_qty,
-						qty_dict.in_val, qty_dict.out_qty,
-						qty_dict.out_val, qty_dict.bal_qty,
-						qty_dict.bal_val, qty_dict.val_rate,
+						(qty_dict.opening_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.in_qty,
+						(qty_dict.in_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.out_qty,
+						(qty_dict.out_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.bal_qty,
+						(qty_dict.bal_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
+						(qty_dict.val_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0),
 						company
 					])
         else:
@@ -42,10 +43,10 @@ def execute(filters=None):
 						data.append([qty_dict.brand,
 							wh,
 							qty_dict.stock_uom, qty_dict.opening_qty,
-							qty_dict.opening_val, qty_dict.in_qty,
-							qty_dict.in_val, qty_dict.out_qty,
-							qty_dict.out_val, qty_dict.bal_qty,
-							qty_dict.bal_val,
+							(qty_dict.opening_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.in_qty,
+							(qty_dict.in_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.out_qty,
+							(qty_dict.out_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), qty_dict.bal_qty,
+							(qty_dict.bal_val if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0),
 							company
 						])	
 

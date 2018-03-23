@@ -144,8 +144,9 @@ doc_events = {
     },
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
-	#"autoname": "custom1.custom1.custom1.si_autoname"
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
+	"validate": "custom1.custom1.custom1.si_validate",
+	"before_insert": "custom1.custom1.custom1.si_validate"
 	#"before_save": "custom1.custom1.custom_imei.populate_item_details"
     },
     "Purchase Invoice": {
@@ -154,7 +155,8 @@ doc_events = {
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
-	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
+	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment",
+	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
     }
 }
 
@@ -188,7 +190,7 @@ doc_events = {
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "custom1.event.get_events"
-# }
+#override_whitelisted_methods = {
+# 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "custom1.custom1.custom1.get_outstanding_reference_documents2"
+#}
 

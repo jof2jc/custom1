@@ -155,8 +155,7 @@ doc_events = {
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
-	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment",
-	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
+	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
     }
 }
 
@@ -190,7 +189,7 @@ doc_events = {
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-#override_whitelisted_methods = {
-# 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "custom1.custom1.custom1.get_outstanding_reference_documents2"
-#}
+override_whitelisted_methods = {
+ 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "custom1.custom1.custom1.get_outstanding_reference_documents2"
+}
 

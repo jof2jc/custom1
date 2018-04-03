@@ -34,23 +34,23 @@ fixtures = [
         		}
 
     		},
-		"Property Setter"
-]
-'''
-fixtures = [                                                                                                                                                  
-	        {
-        		"doctype": "Property Setter",
-		        "filters": {
-        				"doc_type": ["in", ["Sales Invoice","Purchase Invoice","Sales Order","Purchase Order","Item","Stock Settings"]],
-				        "field_name": ["in", ["subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field"]]
-        		}
-
-    		},
 		{
         		"doctype": "Custom Field",
 		        "filters": {
         				"dt": ["in", ["Sales Invoice"]],
 					"name": ["in", ["Sales Invoice-get_items", "Sales Invoice-serial_nos","Sales Invoice-clear"]]
+        		}
+
+    		},
+		"Property Setter"
+]
+'''
+fixtures = [       
+		{
+        		"doctype": "Property Setter",
+		        "filters": {
+        				"doc_type": ["in", ["Stock Entry","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
+				        "field_name": ["in", ["pos_profile","source_warehouse_address","target_warehouse_address","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
         		}
 
     		}

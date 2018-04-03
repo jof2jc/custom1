@@ -136,6 +136,8 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 					(item.doctype && frappe.model.can_read(item.doctype))) {
 						item.shown = true;
 				}
+				//console.log(frappe.boot.user.can_read.includes(item.doctype));
+				//if (!frappe.model.can_create(item.doctype))item.shown=false;
 			});
 		});
 	}

@@ -134,6 +134,8 @@ website_context = {
 # 		"on_trash": "method"
 #	}
 # }
+on_session_creation = ["custom1.custom1.custom1.get_outstanding_invoices_onload_pe"]
+
 doc_events = {
     "Item": {
 	"validate": "custom1.custom1.custom1.item_validate"
@@ -156,6 +158,10 @@ doc_events = {
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
 	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
+	#"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
+    },
+    "Payment Reconciliation": {
+	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
     }
 }
 

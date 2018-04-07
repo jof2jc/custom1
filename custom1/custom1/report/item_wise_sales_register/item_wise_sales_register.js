@@ -8,6 +8,7 @@ frappe.query_reports["Item wise Sales Register"] = frappe.query_reports["Sales R
 			"label": __("From Date"),
 			"fieldtype": "Date",
 			"default": get_today(),
+			"hidden": !frappe.user.has_role("Accounts Manager"),
 			"width": "80"
 		},
 		{

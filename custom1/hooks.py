@@ -134,7 +134,7 @@ website_context = {
 # 		"on_trash": "method"
 #	}
 # }
-on_session_creation = ["custom1.custom1.custom1.get_outstanding_invoices_onload_pe"]
+on_session_creation = ["custom1.custom1.custom1.payment_reconciliation_onload"]
 
 doc_events = {
     "Item": {

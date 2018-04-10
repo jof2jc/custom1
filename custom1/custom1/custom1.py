@@ -23,6 +23,10 @@ def get_outstanding_invoices_onload_pe(self=None, method=None):
 	import erpnext.accounts.utils
 	erpnext.accounts.utils.get_outstanding_invoices = get_outstanding_invoices2
 
+def payment_reconciliation_onload():
+	from erpnext.accounts.doctype.payment_reconciliation.payment_reconciliation import PaymentReconciliation
+	PaymentReconciliation.onload = get_outstanding_invoices_onload_pe
+
 
 def item_validate(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
@@ -68,8 +72,8 @@ def si_validate(self, method):
 
 		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 
-	if self.no_online_order and same_invoice:
-		frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
+		if self.no_online_order and same_invoice:
+			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
 
 def si_autoname(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 

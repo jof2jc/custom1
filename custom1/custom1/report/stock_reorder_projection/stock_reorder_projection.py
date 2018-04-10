@@ -27,32 +27,32 @@ def execute(filters=None):
 	data = []
 	for item in sorted(items):
 		if delivered_item_map.get(item.name) is not None:
-			qty_map = {k:v for k,v in delivered_item_map.items() if k == item.name and delivered_item_map[k]["warehouse"]==item.warehouse}
-				#if k == item.name and delivered_item_map[k]["warehouse"]==item.warehouse:
-					#qty_map = delivered_item_map[k]
-			total_outgoing = flt(qty_map.get(item.name,{}).get("si_qty",0))
-					#frappe.msgprint(cstr(qty_map.si_qty))
+			#qty_map = {k:v for k,v in delivered_item_map.items() if k == item.name and delivered_item_map[k]["warehouse"]==item.warehouse}
+			#total_outgoing = flt(qty_map.get(item.name,{}).get("si_qty",0))
+			total_outgoing = flt(delivered_item_map.get(item.name,{}).get("si_qty",0))
+			#frappe.msgprint(cstr(qty_map.si_qty))
 
 		if return_item_map.get(item.name) is not None:
-			for k,v in return_item_map.items():
-				if k == item.name and return_item_map[k]["warehouse"]==item.warehouse:
-					return_map = return_item_map[k]
-					total_return = flt(return_map.return_qty)
+			total_return = flt(return_item_map.get(item.name,{}).get("return_qty",0))
+			#for k,v in return_item_map.items():
+			#	if k == item.name and return_item_map[k]["warehouse"]==item.warehouse:
+			#		return_map = return_item_map[k]
+			#		total_return = flt(return_map.return_qty)
 	
 		reorder_level = flt(total_outgoing) - flt(total_return) - flt(item.actual_qty)
 
-		data.append([item.name, item.item_name, item.description, item.item_group, item.brand, item.warehouse, item.stock_uom,
+		data.append([item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom,
 				total_outgoing, total_return, item.actual_qty,
 			 reorder_level])
 		total_outgoing = 0
-		total_return = 0
+		total_return = reorder_level = 0
 
 	return columns , data
 
 def get_columns():
 	return[
 			_("Item") + ":Link/Item:120", _("Item Name") + ":Data:120", _("Description") + "::160",
-			_("Item Group") + ":Link/Item Group:120", _("Brand") + ":Link/Brand:100", _("Warehouse") + ":Link/Warehouse:100",_("UOM") + ":Link/UOM:60",
+			_("Item Group") + ":Link/Item Group:120", _("Brand") + ":Link/Brand:100", _("UOM") + ":Link/UOM:60",
 			#_("Safety Stock") + ":Float:160", _("Lead Time Days") + ":Float:120", _("Consumed") + ":Float:120",
 			#_("Delivered") + ":Float:120", _("Total Outgoing") + ":Float:120", _("Avg Daily Outgoing") + ":Float:160",
 			_("Total Outgoing") + ":Float:120", _("Total Return") + ":Float:120", _("Actual Qty") + ":Float:120",
@@ -60,8 +60,9 @@ def get_columns():
 	]
 
 def get_item_info():
-	return frappe.db.sql("""select it.name, bin.warehouse, it.stock_uom, bin.actual_qty, it.item_name, it.description, item_group, brand
-			from `tabItem` it, `tabBin` bin Where it.item_code=bin.item_code""", as_dict=1)
+	return frappe.db.sql("""select it.name, it.stock_uom, sum(bin.actual_qty) as actual_qty, it.item_name, it.description, item_group, brand
+			from `tabItem` it, `tabBin` bin Where it.item_code=bin.item_code group by
+			it.name, it.stock_uom, it.item_name, it.description, item_group, brand""", as_dict=1)
 
 def get_consumed_items(condition):
 
@@ -79,11 +80,11 @@ def get_consumed_items(condition):
 	return cn_items_map
 
 def get_return_items(condition):
-	si_items = frappe.db.sql("""select si_item.item_code, si_item.warehouse, sum(abs(si_item.qty)) as return_qty
+	si_items = frappe.db.sql("""select si_item.item_code, sum(abs(si_item.qty)) as return_qty
 		from `tabSales Invoice` si, `tabSales Invoice Item` si_item
 		where si.name = si_item.parent and si.docstatus = 1 and si.is_return = 1 and
 		si.update_stock = 1 %s
-		group by si_item.item_code,si_item.warehouse""" % (condition), as_dict=1)
+		group by si_item.item_code""" % (condition), as_dict=1)
 
 
 	dn_item_map = {}
@@ -100,11 +101,11 @@ def get_delivered_items(condition):
 		si.update_stock = 1 and si_item.item_code = 'RE 03' %s
 		group by si_item.item_code, si_item.warehouse""" % (condition))
 
-	si_items = frappe.db.sql("""select si_item.item_code, si_item.warehouse, sum(si_item.qty) as si_qty
+	si_items = frappe.db.sql("""select si_item.item_code, sum(si_item.qty) as si_qty
 		from `tabSales Invoice` si, `tabSales Invoice Item` si_item
 		where si.name = si_item.parent and si.docstatus = 1 and si.is_return != 1 and
 		si.update_stock = 1 %s
-		group by si_item.item_code, si_item.warehouse""" % (condition), as_dict=1)
+		group by si_item.item_code""" % (condition), as_dict=1)
 
 	dn_item_map = {}
 

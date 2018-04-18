@@ -40,22 +40,33 @@ def item_validate(self, method):
 	self.name = self.item_code
 
 def si_validate(self, method):
-	company = frappe.db.get_value("Global Defaults", None, "default_company") 
+	if self.company: #make sure only import online_order
+		return
+	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
+	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
 
-	if company not in ("SILVER PHONE","TOKO BELAKANG", "NEXTECH"):
+	if company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH"):
 		return
 
-	sames_invoice = ""
+	same_invoice = ""
+	cost_center = ""
 
 	self.update_stock = 1
 	self.company = company
 
+	if self.naming_series and len(self.naming_series) > 10:
+		no_online_order = self.naming_series
+		self.no_online_order = no_online_order
+
+	#frappe.throw(self.company)
+
 	if not self.selling_price_list:
-		self.selling_price_list = cost_center=frappe.db.get_value("Customer", {"name":self.customer}, "default_price_list") #"Price 1"
+		self.selling_price_list = frappe.db.get_value("Customer", {"name":self.customer}, "default_price_list") #"Price 1"
+		if not self.selling_price_list:
+			self.selling_price_list = frappe.db.get_single_value('Selling Settings', 'selling_price_list')	
 
 	self.due_date = add_days(self.posting_date, 7);
 
-	#frappe.throw(_("Company is {0}").format(company))
 
 	if self.no_online_order and len(self.no_online_order) > 5:
 		if (self.is_return):
@@ -63,7 +74,14 @@ def si_validate(self, method):
 		else:
 			self.naming_series = "no_online_order.-.##"
 
+		#frappe.throw(_("naming_series is {0} , name is {1}").format(self.naming_series,self.name))
+
 		for d in self.items:
+			item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and description like %s limit 1''', ("%" + d.item_code.strip() + "%"), as_dict=0)
+			#frappe.throw(cstr(item_code[0][0]))
+			if item_code:
+				d.item_code = cstr(item_code[0][0])
+
 			cost_center=frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value")
 			if cost_center:
 				d.cost_center = cost_center 
@@ -75,16 +93,39 @@ def si_validate(self, method):
 		if self.no_online_order and same_invoice:
 			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
 
-def si_autoname(self, method):
-	company = frappe.db.get_value("Global Defaults", None, "default_company") 
-	print company
-	#frappe.throw(_("Company is {0}").format(company))
+	#frappe.throw(_("Ongkir : {0}").format(self.shipping_fee))
 
-	if company != "NEXTECH":
+	if self.shipping_fee > 0:
+		self.taxes = {};
+		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' OR name like '%Ongkir%' limit 1''', as_dict=0)
+		
+		self.append("taxes", {
+				"charge_type": "Actual",
+				"account_head": cstr(account_head[0][0]),
+				"cost_center": frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value") or frappe.db.get_value("Company", company, "cost_center"),
+				"description": "Ongkir",
+				"tax_amount": flt(self.shipping_fee)
+			})
+			
+
+def si_autoname(self, method):
+	#frappe.throw(_("Series : {0}, name: {1}").format(self.naming_series, self.name))
+	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
+
+	if company not in ("SILVER PHONE", "NEXTECH"):
 		return
 
-	if not self.name:
-		self.name = self.no_online_order.strip().upper()
+	self.update_stock = 1
+	self.company = company
+
+	if self.no_online_order and len(self.no_online_order) > 10:
+		if (self.is_return):
+			self.naming_series = "R/.no_online_order.-.##"
+		else:
+			self.naming_series = "no_online_order.-.##"
+
+	#frappe.throw(_("Series : {0}, name: {1}").format(self.naming_series, self.name))
+
 
 @frappe.whitelist()
 def nex_get_invoice_by_orderid(order_id, customer):
@@ -123,7 +164,7 @@ def get_outstanding_invoices2(party_type, party, account, condition=None):
 			where
 				{party_type} = %s and docstatus = 1 and outstanding_amount > 0
 			order by
-				posting_date, name
+				posting_date, name limit 150
 			""".format(
 				invoice = invoice,
 				party_type = scrub(party_type)

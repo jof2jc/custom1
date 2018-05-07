@@ -12,7 +12,7 @@ def execute(filters=None):
 	columns = get_columns(filters)
 	item_map = get_item_details()
 	pl = get_price_list()
-	last_purchase_rate = get_last_purchase_rate()
+	#last_purchase_rate = get_last_purchase_rate()
 	#bom_rate = get_item_bom_rate()
 	val_rate_map = get_bin_details()
 
@@ -24,7 +24,8 @@ def execute(filters=None):
 		for item in sorted(item_map):
 			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, 
 				pl.get(item.name, {}).get("Selling"), item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
-				flt(last_purchase_rate.get(item.name, 0), precision), item.item_group, item.description			
+				get_last_purchase_rate(item.name) or 0.0, #flt(last_purchase_rate.get(item.name, 0), precision), 
+				item.item_group, item.description			
 				#pl.get(item, {}).get("Buying"),
 				#flt(bom_rate.get(item, 0), precision)
 			])
@@ -96,12 +97,12 @@ def get_price_list():
 	#print item_rate_map
 	return item_rate_map
 
-def get_last_purchase_rate():
+def get_last_purchase_rate(item_code):
 
 	item_last_purchase_rate_map = {}
 
 	query = """select * from (select
-					result.item_code,
+					result.item_code, result.posting_date,
 					result.base_rate
 					from (
 						(select
@@ -112,7 +113,7 @@ def get_last_purchase_rate():
 							po_item.discount_percentage,
 							po_item.base_rate
 						from `tabPurchase Order` po, `tabPurchase Order Item` po_item
-						where po.name = po_item.parent and po.docstatus = 1)
+						where po.name = po_item.parent and po.docstatus = 1 and po_item.item_code='{item}')
 						union
 						(select
 							pr_item.item_code,
@@ -122,7 +123,7 @@ def get_last_purchase_rate():
 							pr_item.discount_percentage,
 							pr_item.base_rate
 						from `tabPurchase Receipt` pr, `tabPurchase Receipt Item` pr_item
-						where pr.name = pr_item.parent and pr.docstatus = 1)
+						where pr.name = pr_item.parent and pr.docstatus = 1 and pr_item.item_code='{item}')
 						union
 						(select
 							pi_item.item_code,
@@ -132,17 +133,21 @@ def get_last_purchase_rate():
 							pi_item.discount_percentage,
 							pi_item.base_rate
 						from `tabPurchase Invoice` pi, `tabPurchase Invoice Item` pi_item
-						where pi.name = pi_item.parent and pi.docstatus = 1)
+						where pi.name = pi_item.parent and pi.docstatus = 1 and pi_item.item_code='{item}')
 				) result
 				order by result.item_code asc, result.posting_date desc) result_wrapper
-				group by item_code"""
+				group by item_code, posting_date order by posting_date desc""".format( item = item_code )
 
-	for d in frappe.db.sql(query, as_dict=1):
-		item_last_purchase_rate_map.setdefault(d.item_code, d.base_rate)
+	#if item_code == 'GC001':
+	#	frappe.msgprint(query)
 
+	for idx, d in enumerate (frappe.db.sql(query, as_dict=1)):
+		if idx==0:
+			item_last_purchase_rate_map.setdefault(d.item_code, d.base_rate)
+ 
 	print item_last_purchase_rate_map
 
-	return item_last_purchase_rate_map
+	return item_last_purchase_rate_map.get(item_code,0)
 
 def get_item_bom_rate():
 	"""Get BOM rate of an item from BOM"""

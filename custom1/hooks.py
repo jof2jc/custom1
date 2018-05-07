@@ -45,14 +45,27 @@ fixtures = [
 		"Property Setter"
 ]
 '''
-fixtures = [       
+fixtures = [  
+		{
+			"doctype": "Custom Field",
+		        "filters": {
+        				"dt": ["in", ["Payment Entry Reference", "Payment Entry", "Sales Invoice"]],
+				        "fieldname": ["in", ["actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
+        		}
+    		},     
+		{
+			
+			"doctype": "Custom Script",
+		        "filters": {
+        				"dt": ["in", ["Payment Entry", "Data Import"]]
+        		}
+    		},
 		{
         		"doctype": "Property Setter",
 		        "filters": {
-        				"doc_type": ["in", ["Stock Entry","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
-				        "field_name": ["in", ["pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
+        				"doc_type": ["in", ["Data Import","Stock Entry","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
+				        "field_name": ["in", ["reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
         		}
-
     		}
 ]
 	
@@ -147,8 +160,8 @@ doc_events = {
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
-	"before_insert": "custom1.custom1.custom1.si_validate"
-	#"autoname": "custom1.custom1.custom1.si_autoname"
+	"before_insert": "custom1.custom1.custom1.si_before_insert",
+	"validate": "custom1.custom1.custom1.si_validate"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",

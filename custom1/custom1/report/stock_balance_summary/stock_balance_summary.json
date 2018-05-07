@@ -1,17 +1,26 @@
 {
  "add_total_row": 1, 
  "apply_user_permissions": 1, 
- "creation": "2015-11-27 19:47:32.782189", 
+ "creation": "2016-12-10 22:35:05.690689", 
  "disabled": 0, 
  "docstatus": 0, 
  "doctype": "Report", 
+ "idx": 0, 
  "is_standard": "Yes", 
- "modified": "2015-11-27 19:47:32.782189", 
+ "modified": "2018-04-19 21:05:48.399404", 
  "modified_by": "Administrator", 
  "module": "Custom1", 
  "name": "Stock Balance Summary", 
  "owner": "Administrator", 
  "ref_doctype": "testdoctype", 
  "report_name": "Stock Balance Summary", 
- "report_type": "Script Report"
+ "report_type": "Script Report", 
+ "roles": [
+  {
+   "role": "Accounts User"
+  }, 
+  {
+   "role": "Material User"
+  }
+ ]
 }

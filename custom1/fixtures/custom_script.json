@@ -3,9 +3,9 @@
   "docstatus": 0, 
   "doctype": "Custom Script", 
   "dt": "Data Import", 
-  "modified": "2018-04-21 18:55:49.261018", 
+  "modified": "2018-05-07 18:10:21.501513", 
   "name": "Data Import-Client", 
-  "script": "frappe.ui.form.on(\"Data Import\", \"refresh\", function(frm, cdt, cdn) {\n\tfrm.remove_custom_button(('Help'));\n\tfrm.remove_custom_button(('Download template'));\n\tif (!frappe.user.has_role(\"Administrator\",\"System Manager\")){\n\t\tfrm.clear_custom_buttons();\n\t\tfrm.set_df_property(\"reference_doctype\",\"read_only\",1);\n\t\tfrm.set_df_property(\"submit_after_import\",\"read_only\",1);\n\t}\n\telse {\n\t\tfrm.set_df_property(\"reference_doctype\",\"read_only\",0);\n\t\tfrm.set_df_property(\"submit_after_import\",\"read_only\",0);\n\t}\n\t//\tfrm.clear_custom_button(__(\"Help\"), function() {\n\t\t\t//frappe.help.show_video(\"6wiriRKPhmg\");\n\t//\t});\n});\n", 
+  "script": "frappe.ui.form.on(\"Data Import\", \"refresh\", function(frm, cdt, cdn) {\n\tfrm.remove_custom_button(('Help'));\n\tfrm.remove_custom_button(('Download template'));\n\tif (!frappe.user.has_role(\"Administrator\",\"System Manager\")){\n\t\tfrm.clear_custom_buttons();\n\t\t//frm.set_df_property(\"reference_doctype\",\"read_only\",1);\n\t\tfrm.set_df_property(\"submit_after_import\",\"read_only\",1);\n\t}\n\telse {\n\t\tfrm.set_df_property(\"reference_doctype\",\"read_only\",0);\n\t\tfrm.set_df_property(\"submit_after_import\",\"read_only\",0);\n\t}\n\t//\tfrm.clear_custom_button(__(\"Help\"), function() {\n\t\t\t//frappe.help.show_video(\"6wiriRKPhmg\");\n\t//\t});\n\n\tfrm.set_query(\"reference_doctype\", function(){\n        \treturn {\n\t\t            \"filters\": [\n                \t\t\t[\"name\", \"in\", [\"Sales Invoice\",\"Online Shipping Log\"]]\n            \t\t\t]\n        \t}\n    \t});\n});\n", 
   "script_type": "Client"
  }, 
  {

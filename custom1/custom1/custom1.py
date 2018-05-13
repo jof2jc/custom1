@@ -64,7 +64,7 @@ def si_before_save(self, method):
 		self.name = self.no_online_order
 
 def si_validate(self, method):
-	if self.company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA"):
+	if self.company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE"):
 		return
 
 	if self.no_online_order:
@@ -79,7 +79,7 @@ def si_before_insert(self, method):
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
 
-	if company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA"):
+	if company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE"):
 		return
 
 	same_invoice = ""
@@ -109,7 +109,6 @@ def si_before_insert(self, method):
 
 	self.due_date = add_days(self.posting_date, 14);
 
-
 	if self.no_online_order and len(self.no_online_order) > 10:
 		if (self.is_return):
 			self.naming_series = "R/.no_online_order.-.##"
@@ -120,11 +119,14 @@ def si_before_insert(self, method):
 		#frappe.throw(_("naming_series is {0} , name is {1}").format(self.naming_series,self.name))
 
 		for d in self.items:
+			if not d.item_code:
+				frappe.throw(_("Item Code is required"))
 			item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
 				frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
-				((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
-				(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
-			#frappe.throw(cstr(item_code[0][0]))
+				((%s like concat (%s,item_code,%s)) or item_name like %s or description like %s) limit 1''', 
+				(d.item_code.strip(),"%","%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
+			#if company == "HIHI STORE":
+			#	frappe.throw(cstr(item_code[0][0]))
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code
@@ -138,13 +140,16 @@ def si_before_insert(self, method):
 
 				if warehouse:
 					d.warehouse = warehouse
-					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), cstr(nowtime()))
-					if stock_balance <=0:
+					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), nowtime())
+					if (stock_balance - flt(d.qty or 0.0)) < 0:
 						frappe.throw(_("Insufficient Stock for item : {0}").format(d.item_code))
 				else:
 					frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
 			else:
 				frappe.throw(_("Item Code not found : {0}").format(d.item_code))
+
+			if not d.qty:
+				frappe.throw(_("Qty is required for Item : {0}").format(d.item_code))
 
 			cost_center=frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value")
 			if cost_center:
@@ -153,7 +158,7 @@ def si_before_insert(self, method):
 				d.cost_center = frappe.db.get_value("Company", company, "cost_center") 
 
 			#remove currency symbol if any convert to float
-			_rate = cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate))))
+			_rate = cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
 			#frappe.throw(_("rate is {0}").format(cstr(d.rate)))
 			if _rate:
 				d.rate = cstr(_rate).replace(".","")
@@ -166,7 +171,7 @@ def si_before_insert(self, method):
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
 	if self.shipping_fee:
-		shipping_fee = cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee))))
+		shipping_fee = cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
 		self.shipping_fee = cstr(shipping_fee).replace(".","")
 
 		insurance_fee = cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))

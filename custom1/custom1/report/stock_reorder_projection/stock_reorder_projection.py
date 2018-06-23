@@ -117,7 +117,7 @@ def get_delivered_items(condition):
 def get_condition(filters):
 	conditions = ""
 	if filters.get("from_date") and filters.get("to_date"):
-		conditions += " and posting_date between '%s' and '%s' " % (filters["from_date"],filters["to_date"])
+		conditions += " and si.posting_date between '%s' and '%s' " % (filters["from_date"],filters["to_date"])
 	else:
 		frappe.throw(_("From and To dates required"))
 	return conditions

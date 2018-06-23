@@ -50,7 +50,7 @@ fixtures = [
 			"doctype": "Custom Field",
 		        "filters": {
         				"dt": ["in", ["Payment Entry Reference", "Payment Entry", "Sales Invoice"]],
-				        "fieldname": ["in", ["actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
+				        "fieldname": ["in", ["import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
         		}
     		},     
 		{
@@ -63,8 +63,20 @@ fixtures = [
 		{
         		"doctype": "Property Setter",
 		        "filters": {
-        				"doc_type": ["in", ["Data Import","Stock Entry","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
-				        "field_name": ["in", ["reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
+        				"doc_type": ["in", ["Payment Entry Reference","Data Import","Stock Entry","Stock Entry Detail","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
+				        "field_name": ["in", ["bom","serial_no_batch","serial_no","batch_no","project","discount_amount","project","reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
+        		}
+    		},
+		{
+			"doctype": "Custom DocPerm",
+		        "filters": {
+        				"role": ["in", ["Material User"]]
+        		}
+    		},
+		{
+			"doctype": "Report",
+		        "filters": {
+        				"name": ["in", ["AWB"]]
         		}
     		}
 ]
@@ -83,6 +95,8 @@ app_include_css = [
 	"assets/css/desk1.min.css"
 ]
 
+#after_migrate = ["custom1.custom1.custom1.reset_default_icons"]
+
 # include js, css files in header of desk.html
 # app_include_css = "/assets/custom1/css/custom1.css"
 # app_include_js = "/assets/custom1/js/custom1.js"
@@ -90,6 +104,8 @@ app_include_css = [
 website_context = {
 	"splash_image": "/assets/custom1/images/splash.png"
 }
+
+#doctype_list_js = {"Sales Invoice":"public/js/sales_invoice_list.js"}
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"
@@ -150,6 +166,9 @@ website_context = {
 on_session_creation = ["custom1.custom1.custom1.payment_reconciliation_onload"]
 
 doc_events = {
+    "Batch": {
+	"autoname": "custom1.custom1.custom1.batch_autoname"
+    },
     "Item": {
 	"validate": "custom1.custom1.custom1.item_validate"
     },
@@ -181,10 +200,11 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"custom1.tasks.all"
-# 	],
+scheduler_events = {
+	"daily": [
+ 		"custom1.custom1.custom1.delete_old_docs_daily"
+	]
+}
 # 	"daily": [
 # 		"custom1.tasks.daily"
 # 	],
@@ -198,6 +218,7 @@ doc_events = {
 # 		"custom1.tasks.monthly"
 # 	]
 # }
+
 
 # Testing
 # -------

@@ -27,23 +27,44 @@ def execute(filters=None):
 			party = party_details[sle.voucher_no]
 		else:	
 			party = []
-
-		data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
-			item_detail.brand, item_detail.description, sle.warehouse,
-			item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
-			(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
-			(party.outgoing_rate if party else 0.0), 
-			(sle.valuation_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
-			(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.party if party else ""), 
-			sle.voucher_type, sle.voucher_no, (party.party_type if party else ""),
-			sle.batch_no, sle.serial_no, sle.company])
+		
+		if "Simple CEO" not in frappe.get_roles(frappe.session.user):
+			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
+				item_detail.brand, #item_detail.description, 
+				sle.warehouse,
+				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
+				(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
+				(party.outgoing_rate if party else 0.0), 
+				(sle.valuation_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
+				(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.party if party else ""), 
+				sle.voucher_type, sle.voucher_no, (party.party_type if party else ""),
+				sle.batch_no, sle.serial_no, sle.company])
+		else:
+			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
+				item_detail.brand, #item_detail.description, 
+				sle.warehouse,
+				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
+				sle.incoming_rate, (party.outgoing_rate if party else 0.0), #sle.valuation_rate, 
+				(party.party if party else "")
+			])
 
 	return columns, data
 
 def get_columns():
+	if "Simple CEO" in frappe.get_roles(frappe.session.user):
+		return [_("Date") + ":Datetime:95", _("Item") + ":Link/Item:130", _("Item Name") + "::100", _("Item Group") + ":Link/Item Group:100",
+			_("Brand") + ":Link/Brand:100", #_("Description") + "::200", 
+			_("Warehouse") + ":Link/Warehouse:100",
+			_("UOM") + ":Link/UOM:60", _("Qty") + ":Float:50", _("Balance Qty") + ":Float:100",
+			_("Incoming Rate") + ":Currency:110", _("Outgoing Rate") + ":Currency:110", 
+			#_("Valuation Rate") + ":Currency:110", 
+			_("Customer/Supplier") + ":Dynamic Link/Party Type:150"
+		]
+
 	return [_("Date") + ":Datetime:95", _("Item") + ":Link/Item:130", _("Item Name") + "::100", _("Item Group") + ":Link/Item Group:100",
-		_("Brand") + ":Link/Brand:100", _("Description") + "::200", _("Warehouse") + ":Link/Warehouse:100",
-		_("Stock UOM") + ":Link/UOM:100", _("Qty") + ":Float:50", _("Balance Qty") + ":Float:100",
+		_("Brand") + ":Link/Brand:100", #_("Description") + "::200", 
+		_("Warehouse") + ":Link/Warehouse:100",
+		_("UOM") + ":Link/UOM:60", _("Qty") + ":Float:50", _("Balance Qty") + ":Float:100",
 		_("Incoming Rate") + ":Currency:110", _("Outgoing Rate") + ":Currency:110", 
 		_("Valuation Rate") + ":Currency:110", _("Balance Value") + ":Currency:110",
 		_("Customer/Supplier") + ":Dynamic Link/Party Type:150",

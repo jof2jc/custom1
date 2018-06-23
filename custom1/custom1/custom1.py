@@ -3,6 +3,7 @@ import frappe
 from frappe import _, scrub
 
 from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
+from frappe.utils.dateutils import parse_date
 from frappe.model.naming import make_autoname
 import json
 import datetime
@@ -22,6 +23,18 @@ def build_my_thing():
 def print_test():
 	test() 
 
+def batch_autoname(self, method):
+	from frappe.model.naming import make_autoname
+
+	if frappe.db.get_value('Item', self.item, 'create_new_batch'):
+		self.batch_id = make_autoname('batch-.DD.MM.YYYY.-.###', doc=self)
+	else:
+		frappe.throw(_('Batch ID is mandatory'), frappe.MandatoryError)
+
+	self.name = self.batch_id
+	#frappe.msgprint(_('hi {0}').format(self.name))
+
+
 @frappe.whitelist()
 def get_outstanding_invoices_onload_pe(self=None, method=None):
 	import erpnext.accounts.utils
@@ -36,7 +49,7 @@ def item_validate(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	#frappe.throw(_("Company is {0}").format(company))
 
-	if company.strip().upper() not in ("SILVER PHONE","TOKO BELAKANG", "NEXTECH","HANIPET KOTEGA"):
+	if company.strip().upper() not in ("HANIPET KOTEGA","DCENDOL SERPONG"):
 		return
 		
 	self.item_code = self.item_code.strip().upper()
@@ -44,9 +57,12 @@ def item_validate(self, method):
 	self.name = self.item_code
 
 def si_autoname(self, method):
-	frappe.message(_("Autoname Invoice No {0}").format(self.name))
-	#if self.no_online_order and len(self.no_online_order) > 10:
-	#	self.name = self.no_online_order
+	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
+	if self.no_online_order and len(cstr(self.no_online_order)) > 10 and self.no_online_order != self.naming_series:
+		if (self.is_return):
+			self.name = "R-" + self.no_online_order
+		else:
+			self.name = self.no_online_order
 
 def si_on_change(self, method):
 	frappe.throw(_("before_save {0}").format(self.name))
@@ -79,7 +95,7 @@ def si_before_insert(self, method):
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
 
-	if company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE"):
+	if company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
 		return
 
 	same_invoice = ""
@@ -88,17 +104,36 @@ def si_before_insert(self, method):
 	self.update_stock = 1
 	self.company = company
 
+	if not parse_date(cstr(self.posting_date)):
+		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
+	else:
+		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
+		self.posting_date = parse_date(cstr(self.posting_date))
+
+
+	if company in ("BOMBER STORE","CENTRA ONLINE"): #or self.import_time is not None:
+		self.import_time = nowtime()	
+	#elif company in ("CENTRA ONLINE"):
+	#	self.posting_date = nowdate()
+	#	self.import_time = nowtime()
+	#	self.posting_time = nowtime()
+
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
 
 	if self.naming_series and len(cstr(self.naming_series)) > 10:
-		no_online_order = self.naming_series
+		no_online_order = self.naming_series.strip()
 		self.no_online_order = no_online_order
 
 		if (self.is_return):
 			self.name = "R-" + self.no_online_order
 		else:
 			self.name = self.no_online_order
+
+		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
+		if self.no_online_order and same_invoice:
+			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
+
 
 	#frappe.msgprint(self.name)
 
@@ -123,10 +158,10 @@ def si_before_insert(self, method):
 				frappe.throw(_("Item Code is required"))
 			item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
 				frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
-				((%s like concat (%s,item_code,%s)) or item_name like %s or description like %s) limit 1''', 
-				(d.item_code.strip(),"%","%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
+				((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
+				(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
 			#if company == "HIHI STORE":
-			#	frappe.throw(cstr(item_code[0][0]))
+			#	frappe.throw(cstr(item_code[0][0]) + " " + cstr(self.posting_date))
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code
@@ -138,13 +173,17 @@ def si_before_insert(self, method):
 				warehouse = frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
 						frappe.db.get_single_value('Stock Settings', 'default_warehouse')
 
-				if warehouse:
+				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")
+				if warehouse and is_stock_item:
 					d.warehouse = warehouse
-					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), nowtime())
-					if (stock_balance - flt(d.qty or 0.0)) < 0:
-						frappe.throw(_("Insufficient Stock for item : {0}").format(d.item_code))
+					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), self.posting_time)
+					#if d.item_code == "A309PN":
+					#	frappe.throw(_("Item : {0} Stock: {1} required: {2} Posting Date: {3} Posting Time: {4} Order time: {5}").format(d.item_code, cstr(stock_balance),cstr(d.qty), cstr(self.posting_date), cstr(self.posting_time), cstr(get_time(self.posting_date))))
+					if (stock_balance - flt(d.qty)) < 0.0:
+						frappe.throw(_("Insufficient Stock {0} > {1} for item : {2}").format(cstr(d.qty),cstr(stock_balance),d.item_code))
 				else:
-					frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
+					if is_stock_item:
+						frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
 			else:
 				frappe.throw(_("Item Code not found : {0}").format(d.item_code))
 
@@ -158,30 +197,35 @@ def si_before_insert(self, method):
 				d.cost_center = frappe.db.get_value("Company", company, "cost_center") 
 
 			#remove currency symbol if any convert to float
-			_rate = cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+			_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
 			#frappe.throw(_("rate is {0}").format(cstr(d.rate)))
 			if _rate:
-				d.rate = cstr(_rate).replace(".","")
-
-		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
-
-		if self.no_online_order and same_invoice:
-			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
+				d.rate = _rate #cstr(_rate).replace(".","")
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
 	if self.shipping_fee:
-		shipping_fee = cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
-		self.shipping_fee = cstr(shipping_fee).replace(".","")
+		shipping_fee = flt(cstr(self.shipping_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
+		self.shipping_fee = shipping_fee #cstr(shipping_fee).replace(".","")
 
-		insurance_fee = cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))
-		self.insurance_fee = cstr(insurance_fee).replace(".","")
+		insurance_fee = flt(cstr(self.insurance_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))
+		self.insurance_fee = insurance_fee #cstr(insurance_fee).replace(".","")
 
 		self.taxes = {};
 		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
 				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0)
-		
-		self.append("taxes", {
+
+		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T"]
+
+		is_shipping = 1
+		for c in no_courier:
+			if c in self.courier.upper():
+				is_shipping = 0	
+				if self.courier.upper() == "J&T" and self.company in ("AN Electronic") and not self.awb_no:
+					is_shipping = 1
+	
+		if self.shipping_fee and account_head and is_shipping:
+			self.append("taxes", {
 				"charge_type": "Actual",
 				"account_head": cstr(account_head[0][0]),
 				"cost_center": frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value") or frappe.db.get_value("Company", company, "cost_center"),
@@ -233,10 +277,15 @@ def an_get_invoice_by_orderid(order_id, customer):
 
 
 @frappe.whitelist()
-def get_last_rate_by_customer(customer):
+def get_last_rate_by_customer(customer,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
-		where si.docstatus=1 and customer=%s 
-		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (customer), as_dict=0)
+		where si.docstatus=1 and customer like %s and item_code=%s
+		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + customer + "%"),item_code), as_dict=0)
+
+@frappe.whitelist()
+def get_open_customer(customer,name):
+	return frappe.db.sql('''select distinct c.name from `tabCustomer` c left join `tabSales Invoice` si on c.name=si.customer
+		where si.docstatus=0 and c.disabled=0 and c.name=%s and si.name != %s limit 1''', (customer,name), as_dict=0)
 
 def get_outstanding_invoices2(party_type, party, account, condition=None):
 	outstanding_invoices = []
@@ -419,3 +468,41 @@ def get_negative_outstanding_invoices(party_type, party, party_account, party_ac
 			"party_account": "debit_to" if party_type == "Customer" else "credit_to"
 		}), (party, party_account), as_dict=True)
 
+
+
+def delete_old_docs_daily():
+	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 3 and folder in ('Home/Attachments') 
+		and file_name not like '%into-the-dawn%' and file_name not like '%Generate_Template%' 
+		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
+
+	if old_docs:
+		for d in old_docs:
+			frappe.delete_doc("File",d.name)
+			frappe.db.commit()
+	
+	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabData Import`
+		where datediff(now(),creation) > 1 and docstatus=0 order by creation desc""", as_dict=1)
+
+	if old_docs:	
+		for d in old_docs:
+			frappe.delete_doc("Data Import",d.name)
+			frappe.db.commit()
+
+	
+	frappe.db.sql ("""DELETE from `tabError Log`
+		where datediff(now(),creation) > 1""")
+
+	frappe.db.sql ("""DELETE from `tabVersion`
+		where datediff(now(),creation) > 90""")
+
+	frappe.db.sql ("""DELETE from `tabActivity Log`
+		where datediff(now(),creation) > 90""")
+
+	frappe.db.sql ("""DELETE from `tabError Snapshot`
+		where datediff(now(),creation) > 1""")
+
+	frappe.db.sql ("""DELETE from `tabDeleted Document`
+		where datediff(now(),creation) > 3""")
+
+def reset_default_icons():
+	frappe.db.sql ("""DELETE from `tabDesktop Icon`	where module_name='Custom1'""")

@@ -1,0 +1,27 @@
+{
+ "add_total_row": 1, 
+ "apply_user_permissions": 1, 
+ "creation": "2018-05-19 19:15:39.560629", 
+ "disabled": 0, 
+ "docstatus": 0, 
+ "doctype": "Report", 
+ "idx": 0, 
+ "is_standard": "Yes", 
+ "letter_head": "Standard", 
+ "modified": "2018-05-24 20:52:02.405300", 
+ "modified_by": "Administrator", 
+ "module": "Custom1", 
+ "name": "Sales Overview By Period", 
+ "owner": "Administrator", 
+ "ref_doctype": "Sales Invoice", 
+ "report_name": "Sales Overview By Period", 
+ "report_type": "Script Report", 
+ "roles": [
+  {
+   "role": "System Manager"
+  }, 
+  {
+   "role": "Resto"
+  }
+ ]
+}

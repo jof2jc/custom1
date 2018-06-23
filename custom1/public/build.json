@@ -21,7 +21,8 @@
 	        "public/js/conf.js",
 		"public/js/help_links.js",
 		"public/js/serial_no_batch_selector.js",
-		"public/js/customer_quick_entry.js"
+		"public/js/customer_quick_entry.js",
+		"public/js/item_quick_entry.js"
     	],
 	 "css/desk1.min.css": [
        		 "public/css/desktop.css"

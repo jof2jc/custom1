@@ -1,2 +1,2 @@
-#execute:import unidecode # new requirement
-#custom1.patches.reset_default_icons
+execute:import unidecode # new requirement
+custom1.patches.reset_default_icons

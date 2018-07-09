@@ -56,13 +56,34 @@ def item_validate(self, method):
 	self.item_name = self.item_code
 	self.name = self.item_code
 
-def si_autoname(self, method):
+@frappe.whitelist()
+def set_si_autoname(doc, method):
 	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
-	if self.no_online_order and len(cstr(self.no_online_order)) > 10 and self.no_online_order != self.naming_series:
-		if (self.is_return):
-			self.name = "R-" + self.no_online_order
-		else:
-			self.name = self.no_online_order
+	if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA"):
+		return
+
+	if doc.no_invoice and not doc.amended_from:
+		doc.name = doc.no_invoice.upper()
+	'''
+	else:
+		_month = getdate(doc.posting_date).strftime('%m')
+		_year = getdate(doc.posting_date).strftime('%y')
+		doc.name = make_autoname("MJF-." + _year + "." + _month + ".-###")
+	'''
+@frappe.whitelist()
+def set_pi_autoname(doc, method):
+	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
+	if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA"):
+		return
+
+	if doc.no_invoice and not doc.amended_from:
+		doc.name = doc.no_invoice.upper()
+	'''
+	else:
+		_month = getdate(doc.posting_date).strftime('%m')
+		_year = getdate(doc.posting_date).strftime('%y')
+		doc.name = make_autoname("MJF-." + _year + "." + _month + ".-###")
+	'''
 
 def si_on_change(self, method):
 	frappe.throw(_("before_save {0}").format(self.name))
@@ -80,14 +101,31 @@ def si_before_save(self, method):
 		self.name = self.no_online_order
 
 def si_validate(self, method):
-	if self.company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE"):
+	if self.company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
 		return
 
 	if self.no_online_order:
 		invoice_no = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 	
-		if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10:
+		if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10 and not self.is_return:
 			frappe.throw(_("Same Invoice No: {0} found").format(self.no_online_order))
+
+def validate_selling_price(it):
+	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
+	last_purchase_rate_in_sales_uom = last_purchase_rate / (it.conversion_factor or 1)
+	
+	if flt(it.rate) < flt(flt(last_purchase_rate_in_sales_uom) * 0.97):
+		frappe.throw("Selling rate {0} is below its last purchase rate: {1}".format(cstr(it.rate), it.item_code))
+
+	last_valuation_rate = frappe.db.sql("""
+				SELECT valuation_rate FROM `tabStock Ledger Entry` WHERE item_code = %s
+				AND warehouse = %s AND valuation_rate > 0
+				ORDER BY posting_date DESC, posting_time DESC, name DESC LIMIT 1
+				""", (it.item_code, it.warehouse))
+	if last_valuation_rate:
+		last_valuation_rate_in_sales_uom = last_valuation_rate[0][0] / (it.conversion_factor or 1)
+		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom) * 0.97):
+			frappe.throw("Selling rate {0} is below its valuation rate: {1}".format(cstr(it.rate), it.item_code))
 
 def si_before_insert(self, method):
 	if self.company: #make sure only import online_order
@@ -160,8 +198,7 @@ def si_before_insert(self, method):
 				frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
 				((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
 				(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
-			#if company == "HIHI STORE":
-			#	frappe.throw(cstr(item_code[0][0]) + " " + cstr(self.posting_date))
+			
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code
@@ -201,6 +238,11 @@ def si_before_insert(self, method):
 			#frappe.throw(_("rate is {0}").format(cstr(d.rate)))
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
+				if company == "BOMBER STORE":
+					validate_selling_price(d)
+
+			if "total_qty" in frappe.db.get_table_columns(self.doctype):
+				self.total_qty = flt(self.total_qty) + flt(d.qty)
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
@@ -470,8 +512,8 @@ def get_negative_outstanding_invoices(party_type, party, party_account, party_ac
 
 
 
-def delete_old_docs_daily():
-	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 3 and folder in ('Home/Attachments') 
+def delete_old_docs_daily1():
+	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 and folder in ('Home/Attachments') 
 		and file_name not like '%into-the-dawn%' and file_name not like '%Generate_Template%' 
 		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
 
@@ -481,7 +523,7 @@ def delete_old_docs_daily():
 			frappe.db.commit()
 	
 	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabData Import`
-		where datediff(now(),creation) > 1 and docstatus=0 order by creation desc""", as_dict=1)
+		where datediff(now(),creation) > 0 and docstatus=0 order by creation desc""", as_dict=1)
 
 	if old_docs:	
 		for d in old_docs:
@@ -490,7 +532,7 @@ def delete_old_docs_daily():
 
 	
 	frappe.db.sql ("""DELETE from `tabError Log`
-		where datediff(now(),creation) > 1""")
+		where datediff(now(),creation) > 0""")
 
 	frappe.db.sql ("""DELETE from `tabVersion`
 		where datediff(now(),creation) > 90""")
@@ -499,7 +541,7 @@ def delete_old_docs_daily():
 		where datediff(now(),creation) > 90""")
 
 	frappe.db.sql ("""DELETE from `tabError Snapshot`
-		where datediff(now(),creation) > 1""")
+		where datediff(now(),creation) > 0""")
 
 	frappe.db.sql ("""DELETE from `tabDeleted Document`
 		where datediff(now(),creation) > 3""")

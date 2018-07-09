@@ -47,7 +47,7 @@ class OnlineShippingLog(Document):
 			#if actual_shipping_fee:
 			#	frappe.throw(_("AWB: {0} with actual shipping fee: {1} exists. No update required").format(self.awb_no, cstr(actual_shipping_fee[0][0])))
 			if not self.actual_shipping_fee:
-				frappe.throw(_("Order ID not found for AWB: {0}. Please upload AWB from marketplace").format(self.awb_no))
+				frappe.throw(_("Actual shipping fee is required if Order ID not found : {0}. Please upload AWB/Resi from marketplace first").format(self.awb_no))
 			elif not self.courier:
 				frappe.throw(_("Courier name is required"))
 

@@ -354,7 +354,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-   "allow_on_submit": 0, 
+   "allow_on_submit": 1, 
    "bold": 0, 
    "collapsible": 0, 
    "columns": 0, 
@@ -393,7 +393,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-05-10 19:57:31.390626", 
+ "modified": "2018-07-05 15:17:49.588884", 
  "modified_by": "Administrator", 
  "module": "Custom1", 
  "name": "Online Shipping Log", 

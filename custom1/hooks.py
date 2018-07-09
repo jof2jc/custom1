@@ -64,7 +64,7 @@ fixtures = [
         		"doctype": "Property Setter",
 		        "filters": {
         				"doc_type": ["in", ["Payment Entry Reference","Data Import","Stock Entry","Stock Entry Detail","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
-				        "field_name": ["in", ["bom","serial_no_batch","serial_no","batch_no","project","discount_amount","project","reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
+				        "field_name": ["in", ["shipping_rule","bom","serial_no_batch","serial_no","batch_no","project","discount_amount","project","reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
         		}
     		},
 		{
@@ -180,11 +180,13 @@ doc_events = {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
-	"validate": "custom1.custom1.custom1.si_validate"
+	"validate": "custom1.custom1.custom1.si_validate",
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
+	"autoname": "custom1.custom1.custom1.set_pi_autoname"
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
@@ -202,7 +204,7 @@ doc_events = {
 
 scheduler_events = {
 	"daily": [
- 		"custom1.custom1.custom1.delete_old_docs_daily"
+ 		"custom1.custom1.custom1.delete_old_docs_daily1"
 	]
 }
 # 	"daily": [

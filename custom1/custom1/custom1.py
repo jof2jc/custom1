@@ -194,11 +194,17 @@ def si_before_insert(self, method):
 		for d in self.items:
 			if not d.item_code:
 				frappe.throw(_("Item Code is required"))
+			
+			#item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
+			#	frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
+			#	((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
+			#	(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
+			
 			item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
 				frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
-				((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
-				(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
-			
+				(item_name like %s or description like %s) limit 1''', 
+				(("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
+
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code

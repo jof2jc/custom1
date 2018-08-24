@@ -18,13 +18,13 @@ def execute():
 	frappe.db.sql ("""DELETE from `tabCustom DocPerm` where parenttype='DocType' 
 			and role in ('Accounts User','Accounts Manager','Sales Manager','Sales User','Sales Master Manager',
 				'Purchase User','Purchase Manager','Purchase Master Manager','Material User',
-				'Material Master Manager','Material Manager')
+				'Material Master Manager','Material Manager','Accounting')
 			and parent not in ('Sales Order','Delivery Note','Cost Center','Territory','testdoctype','Sales Taxes and Charges Template',
 			'Account','Customer Group','Customer','Terms and Conditions','Supplier','Supplier Type','Mode of Payment','Item Group','Currency',
 			'Currency Exchange','Brand','Purchase Taxes and Charges Template','Party Type','Price List','Address','Contact','Quotation',
 			'Payment Term','Payment Terms Template','Journal Entry','Sales Invoice','Purchase Invoice','Payment Entry','Stock Ledger Entry',
 			'Fiscal Year','GL Entry','Tax Rule','ToDo','Note','Period Closing Voucher','Payment Reconciliation','Item','UOM','Warehouse',
 			'Stock Reconciliation','Purchase Receipt','Stock Entry','Bin','Stock Settings','IMEI Stock Opname','Purchase Order',
-			'Item Price','Sales Person')
+			'Item Price','Sales Person','Data Import','Product Bundle')
 
 		""")

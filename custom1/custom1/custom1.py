@@ -49,27 +49,36 @@ def item_validate(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	#frappe.throw(_("Company is {0}").format(company))
 
-	if company.strip().upper() not in ("HANIPET KOTEGA","DCENDOL SERPONG"):
-		return
-		
-	self.item_code = self.item_code.strip().upper()
-	self.item_name = self.item_code
-	self.name = self.item_code
+	if company.strip().upper() in ("HANIPET KOTEGA","DCENDOL SERPONG"):
+		self.item_code = self.item_code.strip().upper()
+		self.item_name = self.item_code
+		self.name = self.item_code
+
+	if flt(self.standard_rate) > 0:
+		frappe.db.set_value("Item Price",\
+				{"item_code":self.item_code,"currency":frappe.db.get_single_value('Global Defaults', 'default_currency'),\
+				"selling":1,"price_list":frappe.db.get_single_value('Selling Settings', 'selling_price_list')},
+				"price_list_rate",self.standard_rate)
 
 @frappe.whitelist()
 def set_si_autoname(doc, method):
 	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
-	if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA"):
-		return
+	#if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA","PT MULTI AGUNG MANDIRI"):
+	#	return
 
-	if doc.no_invoice and not doc.amended_from:
+	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from and doc.company in ("PT BLUE OCEAN LOGISTICS"):
+		#if doc.no_invoice and not doc.amended_from:
 		doc.name = doc.no_invoice.upper()
-	'''
-	else:
+	
+	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.amended_from:
 		_month = getdate(doc.posting_date).strftime('%m')
 		_year = getdate(doc.posting_date).strftime('%y')
-		doc.name = make_autoname("MJF-." + _year + "." + _month + ".-###")
-	'''
+		if not doc.is_return:
+			doc.name = make_autoname("INV/." + _year + "./." + _month + "./.###")
+		else:
+			doc.name = make_autoname("R/INV/." + _year + "./." + _month + "./.###")
+
+	
 @frappe.whitelist()
 def set_pi_autoname(doc, method):
 	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
@@ -101,7 +110,11 @@ def si_before_save(self, method):
 		self.name = self.no_online_order
 
 def si_validate(self, method):
-	if self.company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
+	is_online_shop=0;
+	if "is_online_shop" in frappe.db.get_table_columns("Company"):
+		is_online_shop = frappe.db.get_value("Company", self.company, "is_online_shop")
+
+	if not is_online_shop and self.company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
 		return
 
 	if self.no_online_order:
@@ -133,7 +146,11 @@ def si_before_insert(self, method):
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
 
-	if company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
+	is_online_shop=0;
+	if "is_online_shop" in frappe.db.get_table_columns("Company"):
+		is_online_shop = frappe.db.get_value("Company", company, "is_online_shop")
+
+	if not is_online_shop and company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
 		return
 
 	same_invoice = ""
@@ -551,6 +568,14 @@ def delete_old_docs_daily1():
 
 	frappe.db.sql ("""DELETE from `tabDeleted Document`
 		where datediff(now(),creation) > 3""")
+
+
+@frappe.whitelist()
+def update_print_counter1(doc, method):
+	if "print" in frappe.db.get_table_columns("Sales Invoice"):
+		#self.print = 1
+		frappe.db.set_value("Sales Invoice",doc.name,"print",1)
+		#print(ctr or 0)
 
 def reset_default_icons():
 	frappe.db.sql ("""DELETE from `tabDesktop Icon`	where module_name='Custom1'""")

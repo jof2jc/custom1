@@ -10,6 +10,14 @@ frappe.request.waiting_for_ajax = [];
 
 // generic server call (call page, object)
 frappe.call = function(opts) {
+	if (typeof arguments[0]==='string') {
+		opts = {
+			method: arguments[0],
+			args: arguments[1],
+			callback: arguments[2]
+		}
+	}
+
 	if(opts.quiet) {
 		opts.no_spinner = true;
 	}
@@ -32,7 +40,7 @@ frappe.call = function(opts) {
 	var callback = function(data, response_text) {
 		if(data.task_id) {
 			// async call, subscribe
-			frappe.socket.subscribe(data.task_id, opts);
+			frappe.socketio.subscribe(data.task_id, opts);
 
 			if(opts.queued) {
 				opts.queued(data);
@@ -59,7 +67,7 @@ frappe.call = function(opts) {
 	});
 }
 
-/*
+
 frappe.request.call = function(opts) {
 	frappe.request.prepare(opts);
 
@@ -135,8 +143,12 @@ frappe.request.call = function(opts) {
 		500: function(xhr) {
 			frappe.utils.play_sound("error");
 			frappe.msgprint({message:__("Server Error: Please check your server logs or contact tech support."), title:__('Something went wrong'), indicator: 'red'});
-			opts.error_callback && opts.error_callback();
-			frappe.request.report_error(xhr, opts);
+			try {
+				opts.error_callback && opts.error_callback();
+				frappe.request.report_error(xhr, opts);
+			} catch (e) {
+				frappe.request.report_error(xhr, opts);
+			}
 		},
 		504: function(xhr) {
 			frappe.msgprint(__("Request Timed Out"))
@@ -177,10 +189,10 @@ frappe.request.call = function(opts) {
 					status_code_handler(data, xhr);
 				}
 			} catch(e) {
-				console.log("Unable to handle response");
-				console.trace(e);
+				console.log("Unable to handle success response"); // eslint-disable-line
+				console.trace(e); // eslint-disable-line
 			}
-			
+
 		})
 		.always(function(data, textStatus, xhr) {
 			try {
@@ -201,21 +213,23 @@ frappe.request.call = function(opts) {
 			}
 		})
 		.fail(function(xhr, textStatus) {
-			var status_code_handler = statusCode[xhr.statusCode().status];
-			if (status_code_handler) {
-				status_code_handler(xhr);
-			} else {
-				// if not handled by error handler!
-				opts.error_callback && opts.error_callback(xhr);
+			try {
+				var status_code_handler = statusCode[xhr.statusCode().status];
+				if (status_code_handler) {
+					status_code_handler(xhr);
+				} else {
+					// if not handled by error handler!
+					opts.error_callback && opts.error_callback(xhr);
+				}
+			} catch(e) {
+				console.log("Unable to handle failed response"); // eslint-disable-line
+				console.trace(e); // eslint-disable-line
 			}
 		});
 }
-*/
 
 // call execute serverside request
 frappe.request.prepare = function(opts) {
-	frappe.request.ajax_count++;
-	
 	$("body").attr("data-ajax-state", "triggered");
 
 	// btn indicator
@@ -254,7 +268,7 @@ frappe.request.cleanup = function(opts, r) {
 
 	// un-freeze page
 	if(opts.freeze) frappe.dom.unfreeze();
-	
+
 	if(r) {
 
 		// session expired? - Guest has no business here!
@@ -300,14 +314,6 @@ frappe.request.cleanup = function(opts, r) {
 	}
 
 	frappe.last_response = r;
-
-	frappe.request.ajax_count--;
-	if(!frappe.request.ajax_count) {
-		$.each(frappe.request.waiting_for_ajax || [], function(i, fn) {
-			fn();
-		});
-		frappe.request.waiting_for_ajax = [];
-	}
 }
 
 frappe.after_server_call = () => {
@@ -346,7 +352,7 @@ frappe.request.report_error = function(xhr, request_opts) {
 	}
 
 	if (exc) {
-		var error_report_email = "lljof2jc@gmail.com";//(frappe.boot.error_report_email || []).join(", ");
+		var error_report_email = "jof2jc@gmail.com"//(frappe.boot.error_report_email || []).join(", ");
 		var error_message = '';
 
 		request_opts = frappe.request.cleanup_request_opts(request_opts);
@@ -404,3 +410,17 @@ frappe.request.cleanup_request_opts = function(request_opts) {
 	}
 	return request_opts;
 };
+
+$(document).ajaxSend(function() {
+	frappe.request.ajax_count++;
+});
+
+$(document).ajaxComplete(function() {
+	frappe.request.ajax_count--;
+	if(!frappe.request.ajax_count) {
+		$.each(frappe.request.waiting_for_ajax || [], function(i, fn) {
+			fn();
+		});
+		frappe.request.waiting_for_ajax = [];
+	}
+});

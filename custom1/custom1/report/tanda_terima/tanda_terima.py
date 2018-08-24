@@ -125,7 +125,7 @@ def get_invoices(filters, additional_query_columns):
 	return frappe.db.sql("""select name, posting_date, debit_to, project, customer, customer_name, remarks,
 		base_net_total, base_grand_total, base_rounded_total, outstanding_amount {0}
 		from `tabSales Invoice`
-		where docstatus = 1 %s order by posting_date asc""".format(additional_query_columns or '') %
+		where outstanding_amount != 0 and docstatus = 1 %s order by posting_date asc""".format(additional_query_columns or '') %
 		conditions, filters, as_dict=1)
 
 def get_invoice_income_map(invoice_list):

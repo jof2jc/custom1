@@ -19,7 +19,7 @@ def execute():
 			and role in ('Accounting','Sales Invoicing','Purchase Invoicing','Accounts User','Accounts Manager',
 				'Sales Manager','Sales User','Sales Master Manager',
 				'Purchase User','Purchase Manager','Purchase Master Manager','Material User',
-				'Material Master Manager','Material Manager')
+				'Material Master Manager','Material Manager','CEO','Simple CEO')
 			and parent not in ('Sales Order','Delivery Note','Cost Center','Territory','testdoctype','Sales Taxes and Charges Template',
 			'Account','Customer Group','Customer','Terms and Conditions','Supplier','Supplier Type','Mode of Payment','Item Group','Currency',
 			'Currency Exchange','Brand','Purchase Taxes and Charges Template','Party Type','Price List','Address','Contact','Quotation',
@@ -28,14 +28,14 @@ def execute():
 			'Stock Reconciliation','Purchase Receipt','Stock Entry','Bin','Stock Settings','IMEI Stock Opname','Purchase Order',
 			'Item Price','Sales Person','Communication','Batch','Serial No','Product Bundle','Letter Head','Online Shipping Log',
 			'Mode of Payment','Data Import','Company','Activity Log','Report','Tag Category','Setup Progress','Gender','Salutation',
-			'Kanban Board','Calendar View','Pricing Rule','IMEI')
+			'Kanban Board','Calendar View','Pricing Rule','IMEI','Stock Settings')
 
 		""")
 	frappe.db.sql ("""DELETE from `tabDocPerm` where parenttype='DocType' 
 			and role in ('Accounting','Sales Invoicing','Purchase Invoicing','Accounts User','Accounts Manager',
 				'Sales Manager','Sales User','Sales Master Manager',
 				'Purchase User','Purchase Manager','Purchase Master Manager','Material User',
-				'Material Master Manager','Material Manager')
+				'Material Master Manager','Material Manager','CEO','Simple CEO')
 			and parent not in ('Sales Order','Delivery Note','Cost Center','Territory','testdoctype','Sales Taxes and Charges Template',
 			'Account','Customer Group','Customer','Terms and Conditions','Supplier','Supplier Type','Mode of Payment','Item Group','Currency',
 			'Currency Exchange','Brand','Purchase Taxes and Charges Template','Party Type','Price List','Address','Contact','Quotation',
@@ -44,6 +44,6 @@ def execute():
 			'Stock Reconciliation','Purchase Receipt','Stock Entry','Bin','Stock Settings','IMEI Stock Opname','Purchase Order',
 			'Item Price','Sales Person','Communication','Batch','Serial No','Product Bundle','Letter Head','Online Shipping Log',
 			'Mode of Payment','Data Import','Company','Activity Log','Report','Tag Category','Setup Progress','Gender','Salutation',
-			'Kanban Board','Calendar View','Pricing Rule','IMEI')
+			'Kanban Board','Calendar View','Pricing Rule','IMEI','Stock Settings')
 
 		""")

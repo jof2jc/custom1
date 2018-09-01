@@ -159,14 +159,14 @@ def si_before_insert(self, method):
 	self.update_stock = 1
 	self.company = company
 
-	if not parse_date(cstr(self.posting_date)):
+	if not cstr(getdate(cstr(self.posting_date))):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
 		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
-		self.posting_date = parse_date(cstr(self.posting_date))
+		self.posting_date = cstr(getdate(cstr(self.posting_date)))
 
 
-	if company in ("BOMBER STORE","CENTRA ONLINE"): #or self.import_time is not None:
+	if company in ("BOMBER STORE","CENTRA ONLINE") or "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
 		self.import_time = nowtime()	
 	#elif company in ("CENTRA ONLINE"):
 	#	self.posting_date = nowdate()
@@ -258,6 +258,12 @@ def si_before_insert(self, method):
 
 			#remove currency symbol if any convert to float
 			_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+
+			if "discount_marketplace" in frappe.db.get_table_columns(d.doctype):
+				if d.discount_marketplace:
+					_disc = flt(cstr(d.discount_marketplace or "0").replace("Rp","").replace(".",""))
+					_rate = _rate + flt(_disc or 0.0)
+
 			#frappe.throw(_("rate is {0}").format(cstr(d.rate)))
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
@@ -266,9 +272,18 @@ def si_before_insert(self, method):
 
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):
 				self.total_qty = flt(self.total_qty) + flt(d.qty)
+
+			if "lazada_sku" in frappe.db.get_table_columns(d.doctype):
+				self.shipping_fee = flt(self.shipping_fee) + flt(d.shipping_fee)
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
+	'''Generate random AWB NO if not specified for barcode purpose'''
+	if not self.awb_no and "generate_awb_barcode" in frappe.db.get_table_columns("Company") and not self.is_return:
+		if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
+			temp = frappe.generate_hash()[:12].upper()
+			self.awb_no = temp #+ "-" + self.no_online_order[-5:]
+		
 	if self.shipping_fee:
 		shipping_fee = flt(cstr(self.shipping_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
 		self.shipping_fee = shipping_fee #cstr(shipping_fee).replace(".","")
@@ -282,9 +297,12 @@ def si_before_insert(self, method):
 
 		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T"]
 
+		if self.courier:
+			self.courier = self.courier.upper()
 		is_shipping = 1
+
 		for c in no_courier:
-			if c in self.courier.upper():
+			if c in self.courier:
 				is_shipping = 0	
 				if self.courier.upper() == "J&T" and self.company in ("AN Electronic") and not self.awb_no:
 					is_shipping = 1
@@ -366,14 +384,14 @@ def get_outstanding_invoices2(party_type, party, account, condition=None):
 	invoice = 'Sales Invoice' if party_type == 'Customer' else 'Purchase Invoice'
 
 	invoice_list = frappe.db.sql("""
-			select
+			select distinct
 				"{invoice}" as voucher_type, name as voucher_no,
 				grand_total as invoice_amount, outstanding_amount, posting_date,
 				due_date
 			from
 				`tab{invoice}`
 			where
-				{party_type} = %s and docstatus = 1 and outstanding_amount <> 0 {condition}
+				{party_type} = %s and docstatus = 1 and outstanding_amount > 0 {condition}
 			order by
 				posting_date, name limit 150
 			""".format(
@@ -381,6 +399,7 @@ def get_outstanding_invoices2(party_type, party, account, condition=None):
 				party_type = scrub(party_type),
 				condition=condition or ""
 			), (party), as_dict = True)
+	
 	'''
 	unallocated_payment_list = frappe.db.sql("""
 			select

@@ -2,6 +2,14 @@
 	table {
 		   width: 100%;
 	}
+	
+	table, tr, td, div, p, th, tbody {
+		font-family: Tahoma;
+                font-size: 13px;                
+		vertical-align: top;
+                line-height:100%;   
+		padding: 3px !Important;              
+	}
 </style>
 
 <h2 class="text-left">{%= __("TANDA TERIMA FAKTUR") %}</h2>
@@ -43,7 +51,7 @@
 			{% grand_total += data[i]["Outstanding Amount"] %}
 		{% } %}
 			<tr style="font-weight: bold;border-top: 1px solid;">
-					<td colspan=6 style="text-align: right">{%= __("TOTAL HARGA IDR") %}</td>
+					<td colspan=6 style="text-align: right">{%= __("TOTAL IDR") %}</td>
 					<td style="text-align: right">
 						{%= grand_total.toLocaleString() %}</td>
 			</tr>
@@ -55,15 +63,31 @@
 	<tr>
 		<td width="50%" align=center style="border: 1px solid;">
 				{%= __("Tanda Terima") %}
-				<br><br><br><br>
+				<br><br><br><br><br><br><br>
 				{%= filters.customer %}
 		</td>
 
 		<td width="50%" align=center style="border: 1px solid;">
 				{%= __("Hormat Kami") %}
-				<br><br><br><br>
-				{%= filters.company %}
+				<br><br><br><br><br><br><br>
+			{% if (frappe.session.user == "test@sumveraneka.com" || frappe.session.user == "glodokltc@sumberaneka.com") { %}
+				MISI SUKSES
+
+			{% } else { %}
+				{%= filters.company %}<br>
+			{% } %}
 		</td>
+	</tr>
+	<tr>
+		<td colspan=2>
+				{% if (frappe.session.user == "test@sumveraneka.com" || frappe.session.user == "glodokltc@sumberaneka.com") { %}
+				Pembayaran transfer dapat dilakukan ke: <br>
+				Bank Account (BCA) 6010131497 A/N HENRY <br><br> 
+				Atau Lewat Giro BCA : 6850199807 A/N HENDRA JUTAWAN
+				{% } %}
+				
+		</td>
+
 	</tr>
 
 </table>

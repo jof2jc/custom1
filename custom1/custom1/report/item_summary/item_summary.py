@@ -11,13 +11,15 @@ def execute(filters=None):
 	item_map = {}
 	columns = []
 	pl = {}
+	columns = get_columns(filters)
+	data = []
 
 	#if "SERIMPI" in cstr(frappe.db.get_single_value('Global Defaults', 'default_company')):
 	#	if not filters.get("item_code"):
-	#		frappe.throw("Please define Item Code")
+	#		return columns, data #frappe.throw("Please define Item Code")
 
 	item_map = get_item_details(filters)
-	columns = get_columns(filters)
+	
 	pl = get_price_list(filters)
 
 	#last_purchase_rate = get_last_purchase_rate()
@@ -26,7 +28,6 @@ def execute(filters=None):
 
 	from erpnext.accounts.utils import get_currency_precision
 	precision = get_currency_precision() or 2
-	data = []
 
 	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		for item in sorted(item_map):

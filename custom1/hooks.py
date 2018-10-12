@@ -9,40 +9,15 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "jof2jc@gmail.com"
 app_version = "0.0.1"
-'''
+
 fixtures = [    
 		{
-        		"doctype": "User",
-			"filters": {
-        				"email": ["=", ["mitra_gemilang16@yahoo.com"]],
-					"field_name": ["in", ["blocked_modules"]]
-        		}
-
-    		},
-		{
-        		"doctype": "Report",
+			"doctype": "Custom Field",
 		        "filters": {
-        				"name": ["in", ["SINV","PINV","DLN","SO","QUO","PREC","PO"]]
+        				"dt": ["in", ["Company","Payment Entry Reference", "Payment Entry", "Sales Invoice","Sales Invoice Item"]],
+				        "fieldname": ["in", ["dropshipper","lazada_sku","discount_marketplace","shipping_fee","picked_and_packed","is_online_shop","generate_awb_barcode","import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
         		}
-
-    		},                                                                                                                                              
-	        {
-        		"doctype": "Property Setter",
-		        "filters": {
-        				"doc_type": ["in", ["Sales Invoice","Purchase Invoice","Sales Order","Purchase Order"]],
-				        "field_name": ["in", ["subscription_section","raw_materials_supplied"]]
-        		}
-
-    		},
-		{
-        		"doctype": "Custom Field",
-		        "filters": {
-        				"dt": ["in", ["Sales Invoice"]],
-					"name": ["in", ["Sales Invoice-get_items", "Sales Invoice-serial_nos","Sales Invoice-clear"]]
-        		}
-
-    		},
-		"Property Setter"
+    		}
 ]
 '''
 fixtures = [  
@@ -80,7 +55,7 @@ fixtures = [
         		}
     		}
 ]
-	
+'''	
 # Includes in <head>
 # ------------------
 
@@ -171,6 +146,18 @@ doc_events = {
     },
     "Item": {
 	"validate": "custom1.custom1.custom1.item_validate"
+    },
+    "Journal Entry": {
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
+    },
+    "Payment Entry": {
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
+    },
+    "Purchase Invoice": {
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
+    },
+    "Delivery Note": {
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
     },
     "Stock Entry": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",

@@ -71,12 +71,19 @@ def set_si_autoname(doc, method):
 		doc.name = doc.no_invoice.upper()
 	
 	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.amended_from:
-		_month = getdate(doc.posting_date).strftime('%m')
-		_year = getdate(doc.posting_date).strftime('%y')
-		if not doc.is_return:
-			doc.name = make_autoname("INV/." + _year + "./." + _month + "./.###")
-		else:
-			doc.name = make_autoname("R/INV/." + _year + "./." + _month + "./.###")
+		if frappe.db.get_value("Company",doc.company,"set_autoname_based_on_posting_date"):
+			_month = getdate(doc.posting_date).strftime('%m')
+			_year = getdate(doc.posting_date).strftime('%y')			
+			
+			
+			if "abbr" in frappe.db.get_table_columns("Customer"):
+				abbr = frappe.db.get_value("Customer",doc.customer,"abbr")
+				_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year).replace("INV",abbr)
+
+			else:
+				_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year)
+			
+			doc.name = make_autoname(_series)
 
 	
 @frappe.whitelist()
@@ -123,6 +130,12 @@ def si_validate(self, method):
 		if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10 and not self.is_return:
 			frappe.throw(_("Same Invoice No: {0} found").format(self.no_online_order))
 
+		'''Generate random AWB NO if not specified for barcode purpose'''
+		if not self.awb_no and "generate_awb_barcode" in frappe.db.get_table_columns("Company") and not self.is_return:
+			if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
+				temp = frappe.generate_hash()[:12].upper()
+				self.awb_no = temp #+ "-" + self.no_online_order[-5:]
+
 def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
 	last_purchase_rate_in_sales_uom = last_purchase_rate / (it.conversion_factor or 1)
@@ -155,6 +168,13 @@ def si_before_insert(self, method):
 
 	same_invoice = ""
 	cost_center = ""
+
+	status_order = ["BATAL","BELUM BAYAR","PENDING","UNPAID","CANCEL","MENUNGGU PEMBAYARAN"]
+
+	if self.remarks:
+		for c in status_order:
+			if c in self.remarks.upper():
+				frappe.throw(_("Order is either cancelled or pending for payment: {0}").format(cstr(self.no_online_order)))
 
 	self.update_stock = 1
 	self.company = company
@@ -240,7 +260,7 @@ def si_before_insert(self, method):
 					#if d.item_code == "A309PN":
 					#	frappe.throw(_("Item : {0} Stock: {1} required: {2} Posting Date: {3} Posting Time: {4} Order time: {5}").format(d.item_code, cstr(stock_balance),cstr(d.qty), cstr(self.posting_date), cstr(self.posting_time), cstr(get_time(self.posting_date))))
 					if (stock_balance - flt(d.qty)) < 0.0:
-						frappe.throw(_("Insufficient Stock {0} > {1} for item : {2}").format(cstr(d.qty),cstr(stock_balance),d.item_code))
+						frappe.throw(_("Insufficient Stock {0} > {1} for item : {2} in Warehouse {3}").format(cstr(d.qty),cstr(stock_balance),d.item_code,d.warehouse))
 				else:
 					if is_stock_item:
 						frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
@@ -344,6 +364,11 @@ def si_autoname(self, method):
 
 	#frappe.throw(_("Series : {0}, name: {1}").format(self.naming_series, self.name))
 
+@frappe.whitelist()
+def ptmam_get_si_reference(sales_invoice, pi_no):
+	return frappe.db.sql('''select si.parent,pi.supplier, case when pi.docstatus < 1 then 'Draft' else 'Submitted' End as status
+		from `tabSales Invoice Reference` si, `tabPurchase Invoice` pi
+		where si.parent=pi.name and pi.docstatus < 2 and si.sales_invoice_no=%s and ifnull(si.parent,'')!='' and si.parent != %s''', (sales_invoice,pi_no), as_dict=1)
 
 @frappe.whitelist()
 def nex_get_invoice_by_orderid(order_id, customer):

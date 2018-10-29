@@ -1,0 +1,37 @@
+[
+ {
+  "add_total_row": 0, 
+  "apply_user_permissions": 1, 
+  "disabled": 0, 
+  "docstatus": 0, 
+  "doctype": "Report", 
+  "is_standard": "No", 
+  "javascript": null, 
+  "json": "{\"add_total_row\": 0, \"sort_by\": \"Sales Invoice.modified\", \"add_totals_row\": 0, \"sort_order\": \"desc\", \"sort_by_next\": \"Sales Invoice.posting_date\", \"filters\": [[\"Sales Invoice\", \"docstatus\", \"!=\", \"2\"], [\"Sales Taxes and Charges\", \"description\", \"like\", \"%PPN%\"]], \"sort_order_next\": \"desc\", \"columns\": [[\"name\", \"Sales Invoice\"], [\"company\", \"Sales Invoice\"], [\"status\", \"Sales Invoice\"], [\"posting_date\", \"Sales Invoice\"], [\"customer\", \"Sales Invoice\"], [\"address_display\", \"Sales Invoice\"], [\"tax_id\", \"Sales Invoice\"], [\"included_in_print_rate\", \"Sales Taxes and Charges\"], [\"net_total\", \"Sales Invoice\"], [\"tax_amount\", \"Sales Taxes and Charges\"], [\"description\", \"Sales Taxes and Charges\"], [\"item_code\", \"Sales Invoice Item\"], [\"item_name\", \"Sales Invoice Item\"], [\"qty\", \"Sales Invoice Item\"], [\"price_list_rate\", \"Sales Invoice Item\"], [\"discount_percentage\", \"Sales Invoice Item\"], [\"rate\", \"Sales Invoice Item\"], [\"amount\", \"Sales Invoice Item\"], [\"grand_total\", \"Sales Invoice\"]]}", 
+  "letter_head": "Standard", 
+  "modified": "2018-10-22 14:24:44.717080", 
+  "module": "Accounts", 
+  "name": "eFaktur", 
+  "query": null, 
+  "ref_doctype": "Sales Invoice", 
+  "report_name": "eFaktur", 
+  "report_type": "Report Builder", 
+  "roles": [
+   {
+    "role": "System Manager"
+   }, 
+   {
+    "role": "Accounts Manager"
+   }, 
+   {
+    "role": "Accounting"
+   }, 
+   {
+    "role": "Sales Invoicing"
+   }, 
+   {
+    "role": "General Manager"
+   }
+  ]
+ }
+]

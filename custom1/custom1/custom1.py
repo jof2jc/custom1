@@ -157,13 +157,14 @@ def si_before_insert(self, method):
 	if self.company: #make sure only import online_order
 		return
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
-	company = frappe.db.get_single_value('Global Defaults', 'default_company')	
+	company = frappe.db.get_single_value('Global Defaults', 'default_company')
+	#frappe.throw(company)	
 
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company"):
 		is_online_shop = frappe.db.get_value("Company", company, "is_online_shop")
 
-	if not is_online_shop and company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
+	if not is_online_shop and company not in ("PARAGON JAYA","SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
 		return
 
 	same_invoice = ""

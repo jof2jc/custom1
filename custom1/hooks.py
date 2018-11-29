@@ -23,8 +23,8 @@ fixtures = [
 		{
 			"doctype": "Custom Field",
 		        "filters": {
-        				"dt": ["in", ["Company","Payment Entry Reference", "Payment Entry", "Sales Invoice","Sales Invoice Item"]],
-				        "fieldname": ["in", ["dropshipper","lazada_sku","discount_marketplace","shipping_fee","picked_and_packed","is_online_shop","generate_awb_barcode","import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
+        				"dt": ["in", ["Customer","Company","Payment Entry Reference", "Payment Entry", "Sales Invoice","Sales Invoice Item"]],
+				        "fieldname": ["in", ["alamat_npwp","dropshipper","lazada_sku","discount_marketplace","shipping_fee","picked_and_packed","is_online_shop","generate_awb_barcode","import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
         		}
     		},     
 		{

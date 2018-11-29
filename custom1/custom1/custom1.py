@@ -28,7 +28,7 @@ def batch_autoname(self, method):
 
 	if frappe.db.get_value('Item', self.item, 'create_new_batch'):
 		self.batch_id = make_autoname('batch-.DD.MM.YYYY.-.###', doc=self)
-	else:
+	elif not self.batch_id:
 		frappe.throw(_('Batch ID is mandatory'), frappe.MandatoryError)
 
 	self.name = self.batch_id
@@ -279,13 +279,17 @@ def si_before_insert(self, method):
 
 			#remove currency symbol if any convert to float
 			_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+			_disc = 0.0
 
 			if "discount_marketplace" in frappe.db.get_table_columns(d.doctype):
 				if d.discount_marketplace:
-					_disc = flt(cstr(d.discount_marketplace or "0").replace("Rp","").replace(".",""))
-					_rate = _rate + flt(_disc or 0.0)
+					_disc = flt(cstr(d.discount_marketplace).replace("Rp","").replace(".",""))
+					_rate = _rate + flt(_disc)
+					d.discount_marketplace = flt(_disc)
+					#frappe.throw(_("disc : {1}").format(cstr(_disc)))
 
-			#frappe.throw(_("rate is {0}").format(cstr(d.rate)))
+			#if d.item_code=="CBH.CABY2.MICR.100.WHT":
+			#	frappe.throw(_("rate is {0} disc {1} {2}").format(cstr(_rate), cstr(_disc), cstr(d.discount_marketplace)))
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
 				if company == "BOMBER STORE":

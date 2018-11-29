@@ -15,6 +15,7 @@ from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, 
 from frappe.utils.dateutils import parse_date, user_to_str
 import math
 import datetime
+import re
 
 # imports - third-party imports
 import pymysql
@@ -161,22 +162,37 @@ def export_query():
 	data1.append(['OF','KODE_OBJEK','NAMA','HARGA_SATUAN','JUMLAH_BARANG','HARGA_TOTAL','DISKON','DPP','PPN','TARIF_PPNBM','PPNBM'])
 
 	for i, row in enumerate(ret):
+		alamat_npwp = ""
 		invoice_date = datetime.datetime.strftime(getdate(row[3]), '%d/%m/%Y')
 		tax_id = row[6] or frappe.db.get_value("Customer",row[4],"tax_id") or ""
-		address = row[5] or frappe.db.get_value("Customer",row[4],"address") or ""
+		nik = ""
+		if len(tax_id) > 15:
+			nik = "#NIK#" + tax_id
+			tax_id = "000000000000000"
+
+		if "alamat_npwp" in frappe.db.get_table_columns("Customer"):
+			alamat_npwp = frappe.db.get_value("Customer",row[4],"alamat_npwp")
+
+		address = alamat_npwp or row[5] or frappe.db.get_value("Customer",row[4],"address") or ""
+
 		if (i == 0):
-			efaktur_no = '%013d' % (int(last_efaktur_no) + 1)
-			data1.append(['FK','01','0',efaktur_no,'12',cstr(getdate(invoice_date).year),cstr(invoice_date),tax_id,row[4],address, 
-				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]])
+			efaktur_no = '%013d' % (int(re.sub('[^0-9]','',last_efaktur_no)) + 1)
+			data1.append(['FK','01','0',efaktur_no,cstr(getdate(row[3]).month),cstr(getdate(row[3]).year),
+				cstr(invoice_date),re.sub('[^0-9]','', tax_id),row[4].upper(),address.upper(), 
+				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]+nik])
 		elif i > 0:
 			if row[0] != ret[i-1][0]:
-				efaktur_no = '%013d' % (int(efaktur_no) + 1)
-				data1.append(['FK','01','0',efaktur_no,'12',cstr(getdate(invoice_date).year),cstr(invoice_date),tax_id,row[4],address, 
-				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]])
+				efaktur_no = '%013d' % (int(re.sub('[^0-9]','',efaktur_no)) + 1)
+				data1.append(['FK','01','0',efaktur_no,cstr(getdate(row[3]).month),cstr(getdate(row[3]).year),
+				cstr(invoice_date),re.sub('[^0-9]','', tax_id),row[4].upper(),address.upper(), 
+				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]+nik])
 
 		if "PPN" in row[10].upper():
-			data1.append(['OF',row[11],row[12],row[16],row[13],row[17],'0',round(flt(row[17]),2) if not row[7] else round(flt(row[17])/1.1,2), 
-			round(flt(row[17])*0.1,2) if not row[7] else round(flt(row[17]),2) - round(flt(row[17])/1.1,2),'0','0'])
+			add_disc = flt(row[19]/100.0*row[17]) if row[19] else 0.0
+
+			data1.append(['OF',row[11],row[12],row[16],row[13],row[17],cstr(add_disc) or '0',#add-disc
+			round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2), #dpp
+			round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc),2) - round(flt(row[17]-add_disc)/1.1,2),'0','0']) #ppn
 
 	#for i, row in enumerate(ret):
 	#	data.append([i+1] + list(row))

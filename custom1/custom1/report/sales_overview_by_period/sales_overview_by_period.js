@@ -15,7 +15,7 @@ frappe.query_reports["Sales Overview By Period"] = {
 			"fieldname":"from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
-			"default": frappe.datetime.get_today()//frappe.defaults.get_user_default("year_start_date")
+			"default": frappe.datetime.add_days(frappe.datetime.get_today(), -30)//frappe.defaults.get_user_default("year_start_date")
 		},
 		{
 			"fieldname":"to_date",
@@ -27,8 +27,14 @@ frappe.query_reports["Sales Overview By Period"] = {
 			"fieldname":"group_by",
 			"label": __("Group By"),
 			"fieldtype": "Select",
-			"options": "Invoice\nItem Code\nItem Group\nWarehouse\nCustomer\nCustomer Group\nTerritory",
-			"default": "Item Group"
+			"options": "Invoice\nItem Code\nItem Group\nBrand\nWarehouse\nCustomer\nCustomer Group\nTerritory",
+			"default": "Invoice"
 		},
+		{
+			"fieldname":"based_on_payment_data",
+			"label": __("Show Based On Payment Data"),
+			"fieldtype": "Check",
+			"default": 0
+		}
 	]
 }

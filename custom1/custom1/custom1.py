@@ -65,7 +65,9 @@ def set_si_autoname(doc, method):
 	#frappe.message(_("Autoname Invoice No {0}").format(self.name))
 	#if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA","PT MULTI AGUNG MANDIRI"):
 	#	return
-
+	#frappe.throw("yes")
+	if doc.company == "PT SERIMPI MEGAH PERKASA" and doc.doctype == "Payment Entry":
+		frappe.throw("yes")
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from and doc.company in ("PT BLUE OCEAN LOGISTICS"):
 		#if doc.no_invoice and not doc.amended_from:
 		doc.name = doc.no_invoice.upper()
@@ -76,7 +78,7 @@ def set_si_autoname(doc, method):
 			_year = getdate(doc.posting_date).strftime('%y')			
 			
 			
-			if "abbr" in frappe.db.get_table_columns("Customer"):
+			if "abbr" in frappe.db.get_table_columns("Customer") and doc.doctype == "Sales Invoice":
 				abbr = frappe.db.get_value("Customer",doc.customer,"abbr")
 				_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year).replace("INV",abbr)
 
@@ -582,6 +584,13 @@ def get_negative_outstanding_invoices(party_type, party, party_account, party_ac
 			"party_account": "debit_to" if party_type == "Customer" else "credit_to"
 		}), (party, party_account), as_dict=True)
 
+
+
+def update_default_fiscal_year():
+	d = frappe.get_doc("Global Defaults")
+	if cstr(getdate(nowdate()).year) != cstr(d.current_fiscal_year):
+		d.current_fiscal_year = cstr(getdate(nowdate()).year)
+		d.save()
 
 
 def delete_old_docs_daily1():

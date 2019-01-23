@@ -148,10 +148,10 @@ doc_events = {
     "Item": {
 	"validate": "custom1.custom1.custom1.item_validate"
     },
-    "Journal Entry": {
-	"autoname": "custom1.custom1.custom1.set_si_autoname"
-    },
     "Payment Entry": {
+	"validate": "custom1.custom1.custom1.set_si_autoname"
+    },
+    "Journal Entry": {
 	"autoname": "custom1.custom1.custom1.set_si_autoname"
     },
     "Purchase Invoice": {
@@ -166,6 +166,7 @@ doc_events = {
     },
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
+	"on_submit": "custom1.custom1.makko.update_linked_docs",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",
@@ -193,7 +194,8 @@ doc_events = {
 
 scheduler_events = {
 	"daily": [
- 		"custom1.custom1.custom1.delete_old_docs_daily1"
+ 		"custom1.custom1.custom1.delete_old_docs_daily1",
+		"custom1.custom1.custom1.update_default_fiscal_year"
 	]
 }
 # 	"daily": [

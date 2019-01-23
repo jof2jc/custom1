@@ -161,12 +161,17 @@ def export_query():
 	data1.append(['LT','NPWP','NAMA','JALAN','BLOK','NOMOR','RT','RW','KECAMATAN','KELURAHAN','KABUPATEN','PROPINSI','KODE_POS','NOMOR_TELEPON'])
 	data1.append(['OF','KODE_OBJEK','NAMA','HARGA_SATUAN','JUMLAH_BARANG','HARGA_TOTAL','DISKON','DPP','PPN','TARIF_PPNBM','PPNBM'])
 
+	invoice_dpp = 0
+	invoice_ppn = 0
+	total_dpp = 0.0
+	total_ppn = 0.0
+
 	for i, row in enumerate(ret):
 		alamat_npwp = ""
 		invoice_date = datetime.datetime.strftime(getdate(row[3]), '%d/%m/%Y')
 		tax_id = row[6] or frappe.db.get_value("Customer",row[4],"tax_id") or ""
 		nik = ""
-		if len(tax_id) > 15:
+		if len(re.sub('[^0-9]','', tax_id)) > 15:
 			nik = "#NIK#" + tax_id
 			tax_id = "000000000000000"
 
@@ -180,19 +185,52 @@ def export_query():
 			data1.append(['FK','01','0',efaktur_no,cstr(getdate(row[3]).month),cstr(getdate(row[3]).year),
 				cstr(invoice_date),re.sub('[^0-9]','', tax_id),row[4].upper(),address.upper(), 
 				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]+nik])
+				
+			invoice_dpp = int(flt(row[8]))
+			invoice_ppn = int(flt(row[9]))
+			total_dpp = 0.0
+			total_ppn = 0.0
+				
 		elif i > 0:
 			if row[0] != ret[i-1][0]:
 				efaktur_no = '%013d' % (int(re.sub('[^0-9]','',efaktur_no)) + 1)
 				data1.append(['FK','01','0',efaktur_no,cstr(getdate(row[3]).month),cstr(getdate(row[3]).year),
 				cstr(invoice_date),re.sub('[^0-9]','', tax_id),row[4].upper(),address.upper(), 
 				int(flt(row[8])),int(flt(row[9])),'0','','0','0','0','0',row[0]+nik])
+				
+				invoice_dpp = int(flt(row[8]))
+				invoice_ppn = int(flt(row[9]))
+				total_dpp = 0.0
+				total_ppn = 0.0
+				
 
 		if "PPN" in row[10].upper():
 			add_disc = flt(row[19]/100.0*row[17]) if row[19] else 0.0
 
+			dpp = round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2)
+			ppn = round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc),2) - round(flt(row[17]-add_disc)/1.1,2)
+
+			total_dpp += flt(dpp)
+			total_ppn += flt(ppn)
+			
+			if i <= (len(ret)-1):
+				if i == (len(ret)-1):
+					if invoice_dpp != int(total_dpp):
+						dpp = flt(dpp) + round(flt(invoice_dpp)-flt(total_dpp),2)
+						if invoice_ppn != int(total_ppn):
+							ppn = flt(ppn) + round(flt(invoice_ppn)-flt(total_ppn),2)
+				elif row[0] != ret[i+1][0]:
+					if invoice_dpp != int(total_dpp):
+						dpp = flt(dpp) + round(flt(invoice_dpp)-flt(total_dpp),2)
+						if invoice_ppn != int(total_ppn):
+							ppn = flt(ppn) + round(flt(invoice_ppn)-flt(total_ppn),2)
+			
 			data1.append(['OF',row[11],row[12],row[16],row[13],row[17],cstr(add_disc) or '0',#add-disc
-			round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2), #dpp
-			round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc),2) - round(flt(row[17]-add_disc)/1.1,2),'0','0']) #ppn
+				dpp, #round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2), #dpp
+				ppn, #round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc),2) - round(flt(row[17]-add_disc)/1.1,2), #ppn
+				'0','0']) 
+	
+			
 
 	#for i, row in enumerate(ret):
 	#	data.append([i+1] + list(row))

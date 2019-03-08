@@ -176,7 +176,7 @@ doc_events = {
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
-	"autoname": "custom1.custom1.custom1.set_pi_autoname"
+	"autoname": "custom1.custom1.custom1.set_si_autoname"
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",

@@ -66,8 +66,8 @@ def set_si_autoname(doc, method):
 	#if doc.company not in ("PT BLUE OCEAN LOGISTICS","PT MALABAR JAYA","PT MULTI AGUNG MANDIRI"):
 	#	return
 	#frappe.throw("yes")
-	if doc.company == "PT SERIMPI MEGAH PERKASA" and doc.doctype == "Payment Entry":
-		frappe.throw("yes")
+	#if doc.company == "PT SERIMPI MEGAH PERKASA" and doc.doctype == "Payment Entry":
+	#	frappe.throw("yes")
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from and doc.company in ("PT BLUE OCEAN LOGISTICS"):
 		#if doc.no_invoice and not doc.amended_from:
 		doc.name = doc.no_invoice.upper()
@@ -86,6 +86,13 @@ def set_si_autoname(doc, method):
 				_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year)
 			
 			doc.name = make_autoname(_series)
+	elif doc.doctype in("Purchase Invoice"):
+		_month = getdate(doc.posting_date).strftime('%m')
+		_year = getdate(doc.posting_date).strftime('%y')			
+			
+		_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year)
+			
+		doc.name = make_autoname(_series)
 
 	
 @frappe.whitelist()

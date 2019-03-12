@@ -140,7 +140,7 @@ def get_price_list(filters):
 	rate = {}
 
 	price_list = frappe.db.sql("""select ip.item_code, ip.buying, ip.selling,
-		concat(ifnull(cu.symbol,ip.currency), " ", FORMAT(ip.price_list_rate,0), " - ", ip.price_list) as price
+		concat(ifnull(cu.symbol,ip.currency), " ", FORMAT(ip.price_list_rate,2), " - ", ip.price_list) as price
 		from `tabItem Price` ip, `tabPrice List` pl, `tabCurrency` cu
 		where ip.price_list=pl.name and pl.currency=cu.name and pl.enabled=1 and ip.selling=1 {pl_conditions}"""\
 		.format(pl_conditions=get_pl_conditions(filters)), filters, as_dict=1)

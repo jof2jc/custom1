@@ -329,7 +329,7 @@ def si_before_insert(self, method):
 		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
 				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0)
 
-		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T"]
+		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T", "Cepat"]
 
 		if self.courier:
 			self.courier = self.courier.upper()
@@ -338,6 +338,7 @@ def si_before_insert(self, method):
 		for c in no_courier:
 			if c in self.courier:
 				is_shipping = 0	
+				self.shipping_fee = "0"
 				if self.courier.upper() == "J&T" and self.company in ("AN Electronic") and not self.awb_no:
 					is_shipping = 1
 	

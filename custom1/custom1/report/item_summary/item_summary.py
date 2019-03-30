@@ -37,7 +37,7 @@ def execute(filters=None):
 				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
 				pl.get(item.name, {}).get("Selling"), item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
 				item.last_purchase_rate or 0.0, #get_last_purchase_rate(item.name) or 0.0, #flt(last_purchase_rate.get(item.name, 0), precision), 
-				item.item_group, item.description			
+				item.brand, item.item_group, item.description			
 				#pl.get(item, {}).get("Buying"),
 				#flt(bom_rate.get(item, 0), precision)
 			])
@@ -49,7 +49,7 @@ def execute(filters=None):
 				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
 				pl.get(item.name, {}).get("Selling"), #item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
 				#flt(last_purchase_rate.get(item.name, 0), precision), 
-				item.item_group, item.description		
+				item.brand, item.item_group, item.description		
 				#pl.get(item, {}).get("Buying"),
 				#flt(bom_rate.get(item, 0), precision)
 			])
@@ -65,14 +65,14 @@ def get_columns(filters):
 			_("Warehouse") + ":Link/Warehouse:125", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
 			_("Sales Price List") + "::180",
 			_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
-			_("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]
+			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]
 			#_("Purchase Price List") + "::180", _("BOM Rate") + ":Currency:90"]
 	else:
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
 			_("Warehouse") + ":Link/Warehouse:125",_("Sales Avg/30d") + "::100",_("Age Days") + "::70",
 			_("Sales Price List") + "::180",
 			#_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
-			_("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]	
+			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]	
 			#_("Purchase Price List") + "::180", _("BOM Rate") + ":Currency:90"]
 
 	return columns
@@ -105,7 +105,7 @@ def get_item_details(filters):
 			where pi_item.item_code=it.item_code and pi_item.stock_uom=it.stock_uom 
 			and pi.docstatus=1 order by pi.posting_date desc limit 1) as last_purchase_rate,
 
-		it.item_group, it.item_name, it.description, bin.actual_qty, bin.warehouse, wh.company,
+		it.item_group, it.brand, it.item_name, it.description, bin.actual_qty, bin.warehouse, wh.company,
 		it.stock_uom, bin.valuation_rate from `tabItem` it left join `tabBin` bin on (it.name=bin.item_code and it.stock_uom = bin.stock_uom) 
 		left join `tabWarehouse` wh on wh.name=bin.warehouse 
 		where it.is_stock_item=1 and it.disabled <> 1 {item_conditions} order by it.item_code, it.item_group"""\

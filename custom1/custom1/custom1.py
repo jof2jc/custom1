@@ -68,14 +68,28 @@ def set_si_autoname(doc, method):
 	#frappe.throw("yes")
 	#if doc.company == "PT SERIMPI MEGAH PERKASA" and doc.doctype == "Payment Entry":
 	#	frappe.throw("yes")
+	#from frappe.model.meta import get_parent_dt
+
+	if doc.doctype not in ("Quotation", "Sales Order", "Delivery Note","Sales Invoice","Supplier Quotation","Material Request", \
+		"Purchase Order","Purchase Receipt","Purchase Invoice","Payment Entry","Journal Entry","Stock Entry","Stock Reconciliation", \
+		"Request for Quotation"):
+		return
+
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from and doc.company in ("PT BLUE OCEAN LOGISTICS"):
 		#if doc.no_invoice and not doc.amended_from:
 		doc.name = doc.no_invoice.upper()
 	
-	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.amended_from:
+	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.name:
 		if frappe.db.get_value("Company",doc.company,"set_autoname_based_on_posting_date"):
-			_month = getdate(doc.posting_date).strftime('%m')
-			_year = getdate(doc.posting_date).strftime('%y')			
+			if "transaction_date" in frappe.db.get_table_columns(doc.doctype):
+				posting_date = doc.transaction_date
+			elif "posting_date" in frappe.db.get_table_columns(doc.doctype):
+				posting_date = doc.posting_date
+			else:
+				return
+
+			_month = getdate(posting_date).strftime('%m')
+			_year = getdate(posting_date).strftime('%y')			
 			
 			
 			if "abbr" in frappe.db.get_table_columns("Customer") and doc.doctype == "Sales Invoice":
@@ -329,7 +343,7 @@ def si_before_insert(self, method):
 		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
 				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0)
 
-		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T"]
+		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T", "Cepat"]
 
 		if self.courier:
 			self.courier = self.courier.upper()
@@ -338,6 +352,7 @@ def si_before_insert(self, method):
 		for c in no_courier:
 			if c in self.courier:
 				is_shipping = 0	
+				self.shipping_fee = "0"
 				if self.courier.upper() == "J&T" and self.company in ("AN Electronic") and not self.awb_no:
 					is_shipping = 1
 	

@@ -151,13 +151,7 @@ doc_events = {
     "Payment Entry": {
 	"validate": "custom1.custom1.custom1.set_si_autoname"
     },
-    "Journal Entry": {
-	"autoname": "custom1.custom1.custom1.set_si_autoname"
-    },
-    "Purchase Invoice": {
-	"autoname": "custom1.custom1.custom1.set_si_autoname"
-    },
-    "Delivery Note": {
+    "*": {
 	"autoname": "custom1.custom1.custom1.set_si_autoname"
     },
     "Stock Entry": {
@@ -170,13 +164,11 @@ doc_events = {
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",
-	"autoname": "custom1.custom1.custom1.set_si_autoname",
 	"before_print": "custom1.custom1.custom1.update_print_counter1"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
-	"autoname": "custom1.custom1.custom1.set_si_autoname"
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",

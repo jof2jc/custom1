@@ -32,7 +32,7 @@ def execute(filters=None):
 	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		for item in sorted(item_map):
 			#avg_sales = get_avg_sales_qty(item.name) or 0.0
-			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, 
+			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, item.location_bin,
 				#avg_sales, int(item.actual_qty/avg_sales) if avg_sales > 0 else 0.0,
 				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
 				pl.get(item.name, {}).get("Selling"), item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
@@ -44,7 +44,7 @@ def execute(filters=None):
 	else:
 		for item in sorted(item_map):
 			#avg_sales = get_avg_sales_qty(item.name) or 0.0
-			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, 
+			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, item.location_bin,
 				#avg_sales, int(item.actual_qty/avg_sales) if avg_sales > 0 else 0.0,
 				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
 				pl.get(item.name, {}).get("Selling"), #item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
@@ -62,14 +62,14 @@ def get_columns(filters):
 
 	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
-			_("Warehouse") + ":Link/Warehouse:125", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
+			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
 			_("Sales Price List") + "::180",
 			_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
 			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]
 			#_("Purchase Price List") + "::180", _("BOM Rate") + ":Currency:90"]
 	else:
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
-			_("Warehouse") + ":Link/Warehouse:125",_("Sales Avg/30d") + "::100",_("Age Days") + "::70",
+			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + "::100",_("Age Days") + "::70",
 			_("Sales Price List") + "::180",
 			#_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
 			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]	
@@ -93,9 +93,11 @@ def get_conditions(filters):
 def get_item_details(filters):
 	"""returns all items details"""
 
-	#item_map = {}
+	item_map = {}
 
-	item_map = frappe.db.sql("""select it.name, 
+	if "location_bin" not in frappe.db.get_table_columns("Item"):
+
+		item_map = frappe.db.sql("""select it.name, 
 			(select cast(avg(si_item.stock_qty) as unsigned) as avg_qty from `tabSales Invoice Item` si_item
 			inner join `tabSales Invoice` si on si.name=si_item.parent where si_item.item_code=it.item_code 
 			and si_item.stock_uom=it.stock_uom and si_item.warehouse=bin.warehouse 
@@ -105,11 +107,28 @@ def get_item_details(filters):
 			where pi_item.item_code=it.item_code and pi_item.stock_uom=it.stock_uom 
 			and pi.docstatus=1 order by pi.posting_date desc limit 1) as last_purchase_rate,
 
-		it.item_group, it.brand, it.item_name, it.description, bin.actual_qty, bin.warehouse, wh.company,
+		it.item_group, it.brand, it.item_name, "" as location_bin, it.description, bin.actual_qty, bin.warehouse, wh.company,
 		it.stock_uom, bin.valuation_rate from `tabItem` it left join `tabBin` bin on (it.name=bin.item_code and it.stock_uom = bin.stock_uom) 
 		left join `tabWarehouse` wh on wh.name=bin.warehouse 
 		where it.is_stock_item=1 and it.disabled <> 1 {item_conditions} order by it.item_code, it.item_group"""\
 		.format(item_conditions=get_conditions(filters)),filters, as_dict=1)
+	else:
+		item_map = frappe.db.sql("""select it.name, 
+			(select cast(avg(si_item.stock_qty) as unsigned) as avg_qty from `tabSales Invoice Item` si_item
+			inner join `tabSales Invoice` si on si.name=si_item.parent where si_item.item_code=it.item_code 
+			and si_item.stock_uom=it.stock_uom and si_item.warehouse=bin.warehouse 
+			and si.docstatus=1 and si.posting_date between date_add(curdate(),INTERVAL -30 DAY) and curdate()) as avg_qty,
+
+			(select rate from `tabPurchase Invoice` pi join `tabPurchase Invoice Item` pi_item on pi.name=pi_item.parent 
+			where pi_item.item_code=it.item_code and pi_item.stock_uom=it.stock_uom 
+			and pi.docstatus=1 order by pi.posting_date desc limit 1) as last_purchase_rate,
+
+		it.item_group, it.brand, it.item_name, it.description, it.location_bin, bin.actual_qty, bin.warehouse, wh.company,
+		it.stock_uom, bin.valuation_rate from `tabItem` it left join `tabBin` bin on (it.name=bin.item_code and it.stock_uom = bin.stock_uom) 
+		left join `tabWarehouse` wh on wh.name=bin.warehouse 
+		where it.is_stock_item=1 and it.disabled <> 1 {item_conditions} order by it.item_code, it.item_group"""\
+		.format(item_conditions=get_conditions(filters)),filters, as_dict=1)
+	
 
 	#print item_map
 

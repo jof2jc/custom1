@@ -4,7 +4,7 @@
  "docstatus": 0, 
  "doctype": "Page", 
  "idx": 0, 
- "modified": "2017-12-05 15:56:57.984545", 
+ "modified": "2019-05-02 17:43:52.617669", 
  "modified_by": "Administrator", 
  "module": "Desk1", 
  "name": "modules", 
@@ -13,12 +13,6 @@
  "roles": [
   {
    "role": "Accounts Manager"
-  }, 
-  {
-   "role": "Accounts User"
-  }, 
-  {
-   "role": "Material User"
   }
  ], 
  "script": null, 

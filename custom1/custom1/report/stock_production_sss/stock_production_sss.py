@@ -42,7 +42,8 @@ def execute(filters=None):
 			#item_detail.brand, item_detail.description, 
 			sle.warehouse, 
 			(item_detail.stock_uom + " ~ " + item_detail.uom if item_detail.conversion_factor > 1 else item_detail.stock_uom),#item_detail.stock_uom, 
-			(fmt_money(sle.actual_qty,2) + " ~ " + fmt_money(sle.actual_qty/item_detail.conversion_factor,4) if item_detail.conversion_factor > 1 else fmt_money(sle.actual_qty,2)), 
+			flt(sle.actual_qty),
+			(flt(sle.actual_qty/item_detail.conversion_factor) if item_detail.conversion_factor > 1 else 0.0), 
 			(fmt_money(sle.qty_after_transaction,2) + " ~ " + fmt_money(sle.qty_after_transaction/item_detail.conversion_factor,4) if item_detail.conversion_factor > 1 else fmt_money(sle.qty_after_transaction,2)),
 			item_detail.conversion_factor, #item_detail.uom, 
 			
@@ -67,8 +68,8 @@ def get_columns():
 		_("Item Name") + "::100", _("Item Group") + ":Link/Item Group:100",
 		#_("Brand") + ":Link/Brand:100", _("Description") + "::200",
 		_("Warehouse Stage") + ":Link/Warehouse:100", _("Stock UOM") + "::100",
-		_("Qty") + "::140", _("Balance Qty") + "::140",
-		_("Conversion Factor") + ":Float:75",
+		_("Qty") + ":Float:75", {"label": _("Converted Qty"),"fieldtype": "Float", "width": 75, "precision": 4}, 
+		_("Balance Qty") + "::140", _("Conversion Factor") + ":Float:75",
 
 		#_("#UOM") + ":Link/UOM:75", {"label": _("#Qty"),"fieldtype": "Float", "width": 50, "precision": 4}, 
 		#{"label": _("#Balance Qty"),"fieldtype": "Float", "width": 75, "precision": 4},

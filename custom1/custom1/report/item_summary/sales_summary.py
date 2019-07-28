@@ -72,8 +72,9 @@ def get_sales_summary(filters, additional_query_columns):
 	conditions = get_conditions(filters)
 	return frappe.db.sql("""select si.customer, si.territory, sum(si_item.qty) as qty, si.grand_total, si.outstanding_amount
 		from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
-		where si.docstatus = 1 %s group by si.customer, si.territory order by customer asc""" %
+		where si.docstatus = 1 %s group by si.customer, si.territory order by si.customer asc""" %
 		conditions, filters, as_dict=1)
+
 
 def get_invoices(filters, additional_query_columns):
 	if additional_query_columns:

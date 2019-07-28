@@ -15,7 +15,7 @@ from decimal import Decimal
 
 
 def execute():
-	frappe.db.sql ("""DELETE from `tabDesktop Icon`	where standard=0 and module_name not in ('Accounts','Selling','Buying','Stock','Setup'""")
+	frappe.db.sql ("""DELETE from `tabDesktop Icon`	where standard=0 and module_name not in ('Accounts','Selling','Buying','Stock','Setup')""")
 	#frappe.db.sql ("""Update `tabDesktop Icon` set hidden=0, blocked=0 where standard=1""")
 	#frappe.db.sql ("""Update `tabDesktop Icon` set standard=1, hidden=1, blocked=1 where module_name in ('Accounts','Selling','Buying','Stock','Setup')""")
 

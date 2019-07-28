@@ -7,7 +7,7 @@ frappe.query_reports["Sales Summary"] = {
 			"fieldname":"from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
-			"default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			"default": frappe.datetime.add_days(frappe.datetime.get_today(), -7),
 			"width": "80"
 		},
 		{
@@ -15,6 +15,12 @@ frappe.query_reports["Sales Summary"] = {
 			"label": __("To Date"),
 			"fieldtype": "Date",
 			"default": frappe.datetime.get_today()
+		},
+		{
+			"fieldname":"territory",
+			"label": __("Territory"),
+			"fieldtype": "Link",
+			"options": "Territory"
 		},
 		{
 			"fieldname":"customer",

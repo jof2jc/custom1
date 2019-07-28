@@ -13,6 +13,7 @@ def _execute(filters, additional_table_columns=None, additional_query_columns=No
 	if not filters: filters = frappe._dict({})
 
 	invoice_list = get_purchase_summary(filters, additional_query_columns)
+	total_list = get_invoices(filters, additional_query_columns)
 	columns = get_columns(invoice_list, additional_table_columns)
 
 	if not invoice_list:
@@ -26,9 +27,11 @@ def _execute(filters, additional_table_columns=None, additional_query_columns=No
 	data = []
 	for inv in invoice_list:
 		# invoice details
+		t = total_list.get(inv.supplier,{}).get(inv.supplier_type)
 
 		row = [
-			inv.supplier, inv.grand_total, inv.outstanding_amount
+			inv.supplier, inv.supplier_type, inv.qty, t[0][0], t[0][1]
+			#inv.grand_total, inv.outstanding_amount
 		]
 
 		data.append(row)
@@ -41,7 +44,8 @@ def get_columns(invoice_list, additional_table_columns):
 		_("Supplier") + ":Link/Supplier:120"
 	]
 
-	columns = columns + [_("Grand Total") + ":Currency/currency:120",
+	columns = columns + [_("Supplier Type") + ":Link/Supplier Type:120", _("Qty") + ":Float:75", 
+		_("Grand Total") + ":Currency/currency:120",
 		_("Outstanding Amount") + ":Currency/currency:120"]
 
 	return columns
@@ -67,21 +71,30 @@ def get_purchase_summary(filters, additional_query_columns):
 		additional_query_columns = ', ' + ', '.join(additional_query_columns)
 
 	conditions = get_conditions(filters)
-	return frappe.db.sql("""select supplier, sum(grand_total) as grand_total, sum(outstanding_amount) as outstanding_amount
-		from `tabPurchase Invoice`
-		where docstatus = 1 and supplier != 'BIAYA OPERASIONAL' %s group by supplier order by supplier asc""" %
+	return frappe.db.sql("""select pi.supplier, sup.supplier_type, sum(pi_item.qty) as qty, pi.grand_total, pi.outstanding_amount
+		from `tabPurchase Invoice` pi join `tabPurchase Invoice Item` pi_item on pi.name=pi_item.parent 
+		join `tabSupplier` sup on pi.supplier=sup.name join `tabSupplier Type` st on sup.supplier_type=st.name
+		where pi.docstatus = 1 and pi.supplier != 'BIAYA OPERASIONAL' %s group by pi.supplier, sup.supplier_type order by pi.supplier asc""" %
 		conditions, filters, as_dict=1)
 
 def get_invoices(filters, additional_query_columns):
 	if additional_query_columns:
 		additional_query_columns = ', ' + ', '.join(additional_query_columns)
 
+	total = {}
+
 	conditions = get_conditions(filters)
-	return frappe.db.sql("""select name, posting_date, debit_to, project, customer, customer_name, remarks,
-		base_net_total, base_grand_total, base_rounded_total, outstanding_amount {0}
-		from `tabSales Invoice`
-		where docstatus = 1 %s order by posting_date desc, name desc""".format(additional_query_columns or '') %
+	invoices = frappe.db.sql("""select pi.supplier, sup.supplier_type, sum(pi.grand_total) as grand_total, sum(pi.outstanding_amount) as outstanding_amount
+		from `tabPurchase Invoice` pi  
+		join `tabSupplier` sup on pi.supplier=sup.name join `tabSupplier Type` st on sup.supplier_type=st.name
+		where pi.docstatus = 1 and pi.supplier != 'BIAYA OPERASIONAL' %s group by pi.supplier, sup.supplier_type order by pi.supplier asc""" %
 		conditions, filters, as_dict=1)
+
+	for j in invoices:
+		total.setdefault(j.supplier, {}).setdefault(j.supplier_type, []).append([j.grand_total, j.outstanding_amount])
+
+	return total
+		
 
 def get_invoice_income_map(invoice_list):
 	income_details = frappe.db.sql("""select parent, income_account, sum(base_net_amount) as amount

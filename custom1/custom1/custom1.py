@@ -108,6 +108,13 @@ def set_si_autoname(doc, method):
 			
 		doc.name = make_autoname(_series)
 
+	is_online_shop=0;
+	if "is_online_shop" in frappe.db.get_table_columns("Company") and "no_online_order" in frappe.db.get_table_columns(doc.doctype):
+		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
+
+		if doc.no_online_order and len(doc.no_online_order) > 10:
+			doc.name = doc.no_online_order 
+
 	
 @frappe.whitelist()
 def set_pi_autoname(doc, method):
@@ -158,6 +165,14 @@ def si_validate(self, method):
 			if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
 				temp = frappe.generate_hash()[:12].upper()
 				self.awb_no = temp #+ "-" + self.no_online_order[-5:]
+
+		for d in self.items:
+			""" Get marketplace fee for official store """
+			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
+
+			if item_group and frappe.db.table_exists("Marketplace Fees"):
+				d.discount_percentage = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+
 
 def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
@@ -252,6 +267,9 @@ def si_before_insert(self, method):
 
 		#frappe.throw(_("naming_series is {0} , name is {1}").format(self.naming_series,self.name))
 
+		if "is_official_store" in frappe.db.get_table_columns("Customer"):
+			is_official_store = frappe.db.get_value("Customer", {"name":self.customer}, "is_official_store") or "0"
+
 		for d in self.items:
 			if not d.item_code:
 				frappe.throw(_("Item Code is required"))
@@ -315,8 +333,16 @@ def si_before_insert(self, method):
 			#	frappe.throw(_("rate is {0} disc {1} {2}").format(cstr(_rate), cstr(_disc), cstr(d.discount_marketplace)))
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
+				d.price_list_rate = _rate
 				if company == "BOMBER STORE":
 					validate_selling_price(d)
+
+			""" Get marketplace fee for official store """
+			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
+
+			if item_group and frappe.db.table_exists("Marketplace Fees"):
+				d.discount_percentage = frappe.db.get_value("Marketplaces Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+
 
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):
 				self.total_qty = flt(self.total_qty) + flt(d.qty)
@@ -373,6 +399,13 @@ def si_before_insert(self, method):
 				"description": "Insurance Fee",
 				"tax_amount": flt(self.insurance_fee)
 			})
+
+	'''special disc 1% for marketplace official store'''
+	if "additional_discount_rate" in frappe.db.get_table_columns("Customer") and not self.is_return:
+		additional_discount_rate = frappe.db.get_value("Customer", {"name":self.customer}, "additional_discount_rate")
+		if flt(additional_discount_rate) > 0:
+			self.apply_discount_on = "Net Total"
+			self.additional_discount_percentage = flt(additional_discount_rate)
 			
 
 def si_autoname(self, method):

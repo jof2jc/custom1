@@ -13,8 +13,10 @@
 		<tr style="border-top: 1px solid; border-bottom: 1px solid;">
 				<th style="width: 5%">{%= __("No") %}</th>
 				<th style="width: 30%">{%= __("Customer") %}</th>
-				<th style="width: 30%; text-align: right;">{%= __("Grand Total") %}</th>
-				<th style="width: 35%; text-align: right;">{%= __("Outstanding Amount") %}</th>
+				<th style="width: 15%">{%= __("Territory") %}</th>
+				<th style="width: 10%">{%= __("Qty") %}</th>
+				<th style="width: 20%; text-align: right;">{%= __("Grand Total") %}</th>
+				<th style="width: 20%; text-align: right;">{%= __("Outstanding Amount") %}</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -23,6 +25,9 @@
 			<tr>
 					<td>{%= i+1 %}</td>
 					<td>{%= data[i][__("Customer")] %}</td>
+					<td>{%= data[i][__("Territory")] %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Qty"].toLocaleString() %}</td>
 					<td style="text-align: right">
 						{%= data[i]["Grand Total"].toLocaleString() %}</td>
 					<td style="text-align: right">
@@ -33,7 +38,7 @@
 		{% } %}
 		
 			<tr style="font-weight: bold;border-top: 1px solid;">
-					<td colspan=3 style="text-align: right">{%= __("TOTAL SALES IDR") %}</td>
+					<td colspan=5 style="text-align: right">{%= __("TOTAL SALES IDR") %}</td>
 					<td style="text-align: right">
 						{%= grand_total.toLocaleString() %}</td>
 			</tr>

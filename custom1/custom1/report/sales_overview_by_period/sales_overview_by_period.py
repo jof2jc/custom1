@@ -20,7 +20,7 @@ def execute(filters=None):
 	group_wise_columns = frappe._dict({
 		"invoice": ["parent", "sales_person", "customer", "customer_group", "territory","posting_date","item_code","item_name","item_group", "brand", \
 			"warehouse", "qty", "uom","base_amount"],
-		"item_code": ["item_code", "item_name", "item_group", "qty","base_amount"],
+		"item_code": ["item_code", "item_name", "item_group", "brand", "qty","base_amount"],
 		"warehouse": ["warehouse", "qty","base_amount"],
 		"territory": ["territory", "qty","base_amount"],
 		"item_group": ["item_group", "qty","base_amount"],

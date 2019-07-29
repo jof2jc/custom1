@@ -341,7 +341,7 @@ def si_before_insert(self, method):
 			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
 
 			if item_group and frappe.db.table_exists("Marketplace Fees"):
-				d.discount_percentage = frappe.db.get_value("Marketplaces Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+				d.discount_percentage = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
 				if flt(d.discount_percentage) != 0.0:
 					d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
 

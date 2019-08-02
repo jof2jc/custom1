@@ -24,7 +24,7 @@
 		"public/js/item_quick_entry.js"
     	],
 	"js/report1.min.js": [
-		"public/js/frappe/report/reportview1.js"
+		"public/js/frappe/report/reportview2.js"
 	],
 	 "css/desk1.min.css": [
        		 "public/css/desktop.css"

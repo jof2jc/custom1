@@ -8,6 +8,16 @@
 		</div>
 	</li>
 </ul>
+<!-- 
+{% if frm.meta.beta %}
+<div class="sidebar-menu">
+	<p><label class="label label-warning" title="{{ __("This feature is brand new and still experimental") }}">{{ __("Under Development") }}</label></p>
+	<p><a class="small" href="https://github.com/frappe/{{ frappe.boot.module_app[frappe.scrub(frm.meta.module)] }}/issues/new"
+			target="_blank">
+		{{ __("Click here to post bugs and suggestions") }}</a></p>
+
+</div>
+{% endif %}
 
 <ul class="list-unstyled sidebar-menu sidebar-rating hide">
 	<li class="divider"></li>
@@ -18,6 +28,7 @@
 	</li>
 	<li class="rating-icons"></li>
 </ul>
+-->
 <ul class="list-unstyled sidebar-menu">
 	<li class="divider"></li>
 	<li style="position: relative;">
@@ -26,6 +37,9 @@
 			<span class="badge n-comments">0</span>
 		</a>
 	</li>
+    <!-- {% if(frappe.help.has_help(doctype)) { %}
+    <li><a class="strong help-link" data-doctype="{{ doctype }}">{{ __("Help") }}</a></li>
+    {% } %} -->
 </ul>
 <ul class="list-unstyled sidebar-menu form-assignments">
 	<li class="divider"></li>

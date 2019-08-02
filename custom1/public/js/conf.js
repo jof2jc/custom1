@@ -7,7 +7,6 @@ frappe.provide('erpnext');
 $(document).bind('toolbar_setup', function() {
 	frappe.app.name = "ERPNext";
 
-
 	$('.navbar-home').html('Home');
 
 });
@@ -21,14 +20,15 @@ $.extend(frappe.create_routes, {
 	"Item Group": "Tree/Item Group",
 	"Sales Person": "Tree/Sales Person",
 	"Account": "Tree/Account",
-	"Cost Center": "Tree/Cost Center"
+	"Cost Center": "Tree/Cost Center",
+	"Department": "Tree/Department",
 });
 
 // preferred modules for breadcrumbs
 $.extend(frappe.breadcrumbs.preferred, {
 	"Item Group": "Stock",
 	"Customer Group": "Selling",
-	"Supplier Type": "Buying",
+	"Supplier Group": "Buying",
 	"Territory": "Selling",
 	"Sales Person": "Selling",
 	"Sales Partner": "Selling",

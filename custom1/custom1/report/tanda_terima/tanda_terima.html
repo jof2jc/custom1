@@ -13,7 +13,7 @@
 </style>
 
 <h2 class="text-left">{%= __("TANDA TERIMA FAKTUR") %}</h2>
-<h4 class="text-left">{%= filters.customer %} </h4>
+<h4 class="text-left">{%= filters.customer || filters.customer || data[0][__("Customer")] %} </h4>
 <h5 class="text-left">{%= __("Periode : ") %}
 	{%= frappe.datetime.str_to_user(filters.from_date) %}
 	{%= __("sd") %}
@@ -64,7 +64,7 @@
 		<td width="50%" align=center style="border: 1px solid;">
 				{%= __("Tanda Terima") %}
 				<br><br><br><br><br><br><br>
-				{%= filters.customer %}
+				{%= filters.customer || data[0][__("Customer")] %}
 		</td>
 
 		<td width="50%" align=center style="border: 1px solid;">
@@ -84,6 +84,8 @@
 				Pembayaran transfer dapat dilakukan ke: <br>
 				Bank Account (BCA) 6010131497 A/N HENRY <br><br> 
 				Atau Lewat Giro BCA : 6850199807 A/N HENDRA JUTAWAN
+				{% } else { %}
+					{%= filters.footnote || "" %}
 				{% } %}
 				
 		</td>

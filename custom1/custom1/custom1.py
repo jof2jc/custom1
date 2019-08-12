@@ -75,9 +75,10 @@ def set_si_autoname(doc, method):
 		"Request for Quotation"):
 		return
 
-	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from and doc.company in ("PT BLUE OCEAN LOGISTICS"):
+	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: # and doc.company in ("PT BLUE OCEAN LOGISTICS"):
 		#if doc.no_invoice and not doc.amended_from:
-		doc.name = doc.no_invoice.upper()
+		if doc.no_invoice:
+			doc.name = doc.no_invoice.upper()
 	
 	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.name:
 		if frappe.db.get_value("Company",doc.company,"set_autoname_based_on_posting_date"):
@@ -341,9 +342,9 @@ def si_before_insert(self, method):
 			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
 
 			if item_group and frappe.db.table_exists("Marketplace Fees"):
-				d.discount_percentage = frappe.db.get_value("Marketplaces Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
-				if d.discount_percentage:
-					d.rate = flt(d.rate) * (100.0 - d.discount_percentage)/100.0
+				d.discount_percentage = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+				if flt(d.discount_percentage) != 0.0:
+					d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
 
 
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):

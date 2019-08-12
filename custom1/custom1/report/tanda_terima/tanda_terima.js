@@ -1,6 +1,12 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
+var footnote;
+
+frappe.db.get_value("Terms and Conditions", {"name":"Tanda Terima"}, ["terms"], function(v) {
+if (v) footnote = v.terms
+else footnote = "";
+
 frappe.query_reports["Tanda Terima"] = {
 	"filters": [
 		{
@@ -34,6 +40,13 @@ frappe.query_reports["Tanda Terima"] = {
 			"label": __("Mode of Payment"),
 			"fieldtype": "Link",
 			"options": "Mode of Payment"
+		},
+		{
+			"fieldname":"footnote",
+			"label": __("Foot Notes"),
+			"fieldtype": "Small Text",
+			"default": footnote
 		}
 	]
 }
+});

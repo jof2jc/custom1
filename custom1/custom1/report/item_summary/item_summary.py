@@ -63,14 +63,14 @@ def get_columns(filters):
 	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
 			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
-			_("Sales Price List") + "::180",
+			_("Sales Price List") + "::240",
 			_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
 			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]
 			#_("Purchase Price List") + "::180", _("BOM Rate") + ":Currency:90"]
 	else:
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
 			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + "::100",_("Age Days") + "::70",
-			_("Sales Price List") + "::180",
+			_("Sales Price List") + "::240",
 			#_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
 			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Description") + "::150"]	
 			#_("Purchase Price List") + "::180", _("BOM Rate") + ":Currency:90"]

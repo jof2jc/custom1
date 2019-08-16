@@ -79,8 +79,9 @@ def set_si_autoname(doc, method):
 		#if doc.no_invoice and not doc.amended_from:
 		if doc.no_invoice:
 			doc.name = doc.no_invoice.upper()
+			return
 	
-	elif "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.name:
+	if "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.name:
 		if frappe.db.get_value("Company",doc.company,"set_autoname_based_on_posting_date"):
 			if "transaction_date" in frappe.db.get_table_columns(doc.doctype):
 				posting_date = doc.transaction_date

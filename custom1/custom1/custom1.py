@@ -115,8 +115,10 @@ def set_si_autoname(doc, method):
 		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
 
 		if doc.no_online_order and len(doc.no_online_order) > 10:
-			doc.name = doc.no_online_order 
-
+			if not doc.is_return:
+				doc.name = doc.no_online_order 
+			else:
+				doc.name = "R/" + doc.no_online_order
 	
 @frappe.whitelist()
 def set_pi_autoname(doc, method):
@@ -168,13 +170,42 @@ def si_validate(self, method):
 				temp = frappe.generate_hash()[:12].upper()
 				self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 
+		'''
 		for d in self.items:
 			""" Get marketplace fee for official store """
 			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
-
+			
 			if item_group and frappe.db.table_exists("Marketplace Fees"):
-				d.discount_percentage = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+				mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
+				if not mp_fee:
+					mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":"Products", "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
+				if mp_fee:
+					if not d.discount_percentage:
+						d.discount_percentage = mp_fee[0] or 0.0
 
+				if flt(d.discount_percentage) != 0.0:
+					if not d.price_list_rate:
+						d.price_list_rate = d.rate
+
+				if d.price_list_rate:
+					if ((flt(d.discount_percentage)/100.0 * flt(d.price_list_rate)) > flt(mp_fee[1])) and flt(mp_fee[1]) > 0:
+						d.rate = flt(d.price_list_rate) - flt(mp_fee[1])
+					else:
+						d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
+					#d.amount = flt(d.rate) * flt(d.qty)
+		'''
+
+def si_before_submit(self, method):
+	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
+		if self.no_online_order:
+			self.posting_date = nowdate()
+			#frappe.msgprint(self.posting_date)
+
+	if "max_discount_amount" in frappe.db.get_table_columns("Customer") and not self.is_return:
+		max_discount_amount = flt(frappe.db.get_value("Customer", {"name":self.customer}, "max_discount_amount"))
+		if max_discount_amount != 0.0 and flt(self.discount_amount) > max_discount_amount:
+			self.discount_amount = max_discount_amount
+			self.additional_discount_percentage = 0
 
 def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
@@ -193,6 +224,19 @@ def validate_selling_price(it):
 		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom) * 0.97):
 			frappe.throw("Selling rate {0} is below its valuation rate: {1}".format(cstr(it.rate), it.item_code))
 
+@frappe.whitelist()
+def submit_awb_invoice(ref_no):
+	inv = frappe.get_doc("Sales Invoice",ref_no) #frappe.db.get_value("Sales Invoice", {"awb_no":ref_no, "is_return":0, "docstatus":0}, "name") or frappe.db.get_value("Sales Invoice", {"name":ref_no, "is_return":0, "docstatus":0}, "name"))
+	#frappe.msgprint(inv.name)
+	if inv:
+		inv.flags.ignore_permissions = True
+		inv.delivery_date = nowdate()
+		inv.picked_and_packed = 1
+		#inv.title = "[PnP]" + inv.title
+		inv.submit()
+		frappe.db.commit()
+		return
+
 def si_before_insert(self, method):
 	if self.company: #make sure only import online_order
 		return
@@ -210,9 +254,20 @@ def si_before_insert(self, method):
 	same_invoice = ""
 	cost_center = ""
 
+	#make sure only import order yg sudah diproses
+	status_order = ["AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY_TO_SHIP","DIPROSES PELAPAK"]
+
+	if "order_status" in frappe.db.get_table_columns(self.doctype):
+		if self.order_status:
+			if self.order_status.upper() not in status_order and "SEDANG DIPROSES" not in self.order_status.upper() and "SUDAH DIPROSES" not in self.order_status.upper() and "DIPROSES PELAPAK" not in self.order_status.upper():
+				frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
+			elif "J&T" in self.courier.upper() == "J&T" and not self.awb_no:
+				frappe.throw(_("AWB J&T Belum Diproses: {0}").format(cstr(self.no_online_order)))
+
+
 	status_order = ["BATAL","BELUM BAYAR","PENDING","UNPAID","CANCEL","MENUNGGU PEMBAYARAN"]
 
-	if self.remarks:
+	if self.remarks and "order_status" not in frappe.db.get_table_columns(self.doctype):
 		for c in status_order:
 			if c in self.remarks.upper():
 				frappe.throw(_("Order is either cancelled or pending for payment: {0}").format(cstr(self.no_online_order)))
@@ -224,15 +279,11 @@ def si_before_insert(self, method):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
 		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
-		self.posting_date = cstr(getdate(cstr(self.posting_date)))
+		self.posting_date = cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
 
 
-	if company in ("BOMBER STORE","CENTRA ONLINE") or "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
-		self.import_time = nowtime()	
-	#elif company in ("CENTRA ONLINE"):
-	#	self.posting_date = nowdate()
-	#	self.import_time = nowtime()
-	#	self.posting_time = nowtime()
+	#if "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
+	#	self.import_time = nowtime()	
 
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
@@ -246,12 +297,10 @@ def si_before_insert(self, method):
 		else:
 			self.name = self.no_online_order
 
-		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
+		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 		if self.no_online_order and same_invoice:
 			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
 
-
-	#frappe.msgprint(self.name)
 
 	if not self.selling_price_list:
 		self.selling_price_list = frappe.db.get_value("Customer", {"name":self.customer}, "default_price_list") #"Price 1"
@@ -274,11 +323,11 @@ def si_before_insert(self, method):
 
 		for d in self.items:
 			if not d.item_code:
-				frappe.throw(_("Item Code is required"))
+				frappe.throw(_("Item Code / SKU is required : {0}").format(self.no_online_order))
 			
 			#item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
 			#	frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
-			#	((%s like concat (%s,item_code)) or item_name like %s or description like %s) limit 1''', 
+			#	((%s like concat (%s,item_code,%s)) or item_name like %s or description like %s) limit 1''', 
 			#	(d.item_code.strip(),"%",("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
 			
 			item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and item_code=%s limit 1''', (d.item_code.strip()), as_dict=0) or \
@@ -286,11 +335,21 @@ def si_before_insert(self, method):
 				(item_name like %s or description like %s) limit 1''', 
 				(("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
 
+			if not item_code:
+				item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
+						(%s like concat (%s,item_code,%s)) limit 1''', (d.item_code.strip(),"%","%"), as_dict=0)
+
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code
 				if not d.description:
 					d.description = d.item_name
+
+				if not d.rate:
+					from erpnext.stock.utils import get_incoming_rate
+					d.rate = get_incoming_rate(args={"item_code":d.item_code}) or 10000.0
+					if not d.rate:
+						frappe.throw(_("Harga kosong untuk item : {0}, Order ID: {1}").format(d.item_code,self.no_online_order))
 
 				from erpnext.stock.utils import get_stock_balance
 
@@ -298,21 +357,21 @@ def si_before_insert(self, method):
 						frappe.db.get_single_value('Stock Settings', 'default_warehouse')
 
 				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")
-				if warehouse and is_stock_item:
+				if warehouse:
 					d.warehouse = warehouse
+				if warehouse and is_stock_item and not frappe.db.get_single_value('Stock Settings', 'allow_negative_stock'):
 					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), self.posting_time)
 					#if d.item_code == "A309PN":
 					#	frappe.throw(_("Item : {0} Stock: {1} required: {2} Posting Date: {3} Posting Time: {4} Order time: {5}").format(d.item_code, cstr(stock_balance),cstr(d.qty), cstr(self.posting_date), cstr(self.posting_time), cstr(get_time(self.posting_date))))
 					if (stock_balance - flt(d.qty)) < 0.0:
 						frappe.throw(_("Insufficient Stock {0} > {1} for item : {2} in Warehouse {3}").format(cstr(d.qty),cstr(stock_balance),d.item_code,d.warehouse))
-				else:
-					if is_stock_item:
-						frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
+				elif is_stock_item and not warehouse:
+					frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
 			else:
-				frappe.throw(_("Item Code not found : {0}").format(d.item_code))
+				frappe.throw(_("Item Code / SKU not found : {0}, Order: {1}").format(d.item_code, self.no_online_order))
 
 			if not d.qty:
-				frappe.throw(_("Qty is required for Item : {0}").format(d.item_code))
+				frappe.throw(_("Qty tidak ada untuk Item : {0}").format(d.item_code))
 
 			cost_center=frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value")
 			if cost_center:
@@ -321,8 +380,10 @@ def si_before_insert(self, method):
 				d.cost_center = frappe.db.get_value("Company", company, "cost_center") 
 
 			#remove currency symbol if any convert to float
-			_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+			_rate = 0.0
 			_disc = 0.0
+			if not flt(cstr(d.rate)):
+				_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
 
 			if "discount_marketplace" in frappe.db.get_table_columns(d.doctype):
 				if d.discount_marketplace:
@@ -336,17 +397,24 @@ def si_before_insert(self, method):
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
 				d.price_list_rate = _rate
-				if company == "BOMBER STORE":
-					validate_selling_price(d)
+				#if company == "BOMBER STORE":
+				#	validate_selling_price(d)
 
 			""" Get marketplace fee for official store """
-			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
+			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or "Products"
 
 			if item_group and frappe.db.table_exists("Marketplace Fees"):
-				d.discount_percentage = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, "marketplace_fee_percentage") or 0.0
+				mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
+				if not mp_fee:
+					mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":"Products", "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
+				if mp_fee:
+					d.discount_percentage = mp_fee[0] or 0.0
 				if flt(d.discount_percentage) != 0.0:
-					d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
-
+					if ((flt(d.discount_percentage)/100.0 * flt(d.rate)) > mp_fee[1]) and mp_fee[1] > 0:
+						d.rate = flt(d.rate) - flt(mp_fee[1])
+					else:
+						d.rate = flt(d.rate) * (100.0 - d.discount_percentage)/100.0
+					d.amount = flt(d.rate) * flt(d.qty)
 
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):
 				self.total_qty = flt(self.total_qty) + flt(d.qty)
@@ -363,24 +431,31 @@ def si_before_insert(self, method):
 			self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 		
 	if self.shipping_fee:
-		shipping_fee = flt(cstr(self.shipping_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
-		self.shipping_fee = shipping_fee #cstr(shipping_fee).replace(".","")
+		shipping_fee = 0.0 
+		if not flt(cstr(self.shipping_fee)):
+			shipping_fee = flt(cstr(self.shipping_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
+			self.shipping_fee = shipping_fee #cstr(shipping_fee).replace(".","")
 
-		insurance_fee = flt(cstr(self.insurance_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))
-		self.insurance_fee = insurance_fee #cstr(insurance_fee).replace(".","")
+		insurance_fee = 0.0 
+		if not flt(cstr(self.insurance_fee)):
+			insurance_fee = flt(cstr(self.insurance_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))
+			self.insurance_fee = insurance_fee #cstr(insurance_fee).replace(".","")
 
 		self.taxes = {};
 		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
-				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0)
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ongkos Kirim%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ekspedisi%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Kurir%' limit 1''', as_dict=0)
 
-		no_courier = ["GOSEND","GO-SEND","GRAB","NINJA","REX","J&T", "Cepat"]
+		no_courier = ["POS","WAHANA","TIKI","JNE REG","JNE-REG"]
 
-		if self.courier:
-			self.courier = self.courier.upper()
+		#if self.courier:
+		#	self.courier = self.courier.upper()
 		is_shipping = 1
 
 		for c in no_courier:
-			if c in self.courier:
+			if c not in self.courier.upper():
 				is_shipping = 0	
 				self.shipping_fee = "0"
 				if self.courier.upper() == "J&T" and self.company in ("AN Electronic") and not self.awb_no:
@@ -394,7 +469,9 @@ def si_before_insert(self, method):
 				"description": "Ongkir",
 				"tax_amount": flt(self.shipping_fee)
 			})
-		account_insurance = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Insurance Fee%' limit 1''', as_dict=0)
+		account_insurance = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Insurance Fee%' limit 1''', as_dict=0) or \
+					frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Asuransi%' limit 1''', as_dict=0)
+
 		if self.insurance_fee and account_insurance:
 			self.append("taxes", {
 				"charge_type": "Actual",
@@ -405,13 +482,14 @@ def si_before_insert(self, method):
 			})
 
 	'''special disc 1% for marketplace official store'''
+	'''
 	if "additional_discount_rate" in frappe.db.get_table_columns("Customer") and not self.is_return:
 		additional_discount_rate = frappe.db.get_value("Customer", {"name":self.customer}, "additional_discount_rate")
 		if flt(additional_discount_rate) > 0:
 			self.apply_discount_on = "Net Total"
 			self.additional_discount_percentage = flt(additional_discount_rate)
 			
-
+	'''
 def si_autoname(self, method):
 	#frappe.throw(_("Series : {0}, name: {1}").format(self.naming_series, self.name))
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')	

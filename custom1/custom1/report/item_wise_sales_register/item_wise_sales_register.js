@@ -1,6 +1,7 @@
 // Copyright (c) 2016, jonathan and contributors
 // For license information, please see license.txt
 
+
 frappe.query_reports["Item wise Sales Register"] = frappe.query_reports["Sales Register"] = {
 	"filters": [
 		{
@@ -8,7 +9,7 @@ frappe.query_reports["Item wise Sales Register"] = frappe.query_reports["Sales R
 			"label": __("From Date"),
 			"fieldtype": "Date",
 			"default": frappe.datetime.get_today(),
-			//"hidden": !frappe.user.has_role("Accounts Manager"),
+			"hidden": !frappe.user.has_role("Accounts Manager"),
 			"width": "80"
 		},
 		{

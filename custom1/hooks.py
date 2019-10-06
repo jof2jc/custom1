@@ -10,6 +10,18 @@ app_color = "grey"
 app_email = "jof2jc@gmail.com"
 app_version = "0.0.1"
 
+
+fixtures = [    
+		{
+        		"doctype": "Custom Field",
+		        "filters": {
+        				"dt": ["in", ["Item Group"]],
+				        "fieldname": ["in", ["marketplace_fees","marketplace_fee_setup"]]
+        		}
+    		}
+]
+
+'''
 fixtures = [    
 		{
         		"doctype": "Property Setter",
@@ -19,6 +31,7 @@ fixtures = [
         		}
     		}
 ]
+'''
 '''
 fixtures = [  
 		{
@@ -64,7 +77,8 @@ app_include_js = [
 	"assets/js/list1.min.js",
 	"assets/js/form1.min.js",
 	"assets/js/erpnext1.min.js",
-	"assets/js/report1.min.js"
+	"assets/js/report1.min.js",
+	"assets/js/zplbrowserprint.min.js"
 ]
 
 app_include_css = [
@@ -162,6 +176,7 @@ doc_events = {
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_submit": "custom1.custom1.makko.update_linked_docs",
+	"before_submit": "custom1.custom1.custom1.si_before_submit",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",

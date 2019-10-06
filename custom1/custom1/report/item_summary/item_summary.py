@@ -29,7 +29,18 @@ def execute(filters=None):
 	from erpnext.accounts.utils import get_currency_precision
 	precision = get_currency_precision() or 2
 
-	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
+	if "PERDANA DIESEL" in cstr(frappe.db.get_single_value('Global Defaults', 'default_company')):
+ 		for item in sorted(item_map):
+			data.append([item.name, item["description"], item.actual_qty, item.stock_uom, item.warehouse, item.location_bin,
+				#avg_sales, int(item.actual_qty/avg_sales) if avg_sales > 0 else 0.0,
+				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
+				pl.get(item.name, {}).get("Selling"), item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
+				item.last_purchase_rate or 0.0, #get_last_purchase_rate(item.name) or 0.0, #flt(last_purchase_rate.get(item.name, 0), precision), 
+				item.brand, item.item_group, item.item_name			
+				#pl.get(item, {}).get("Buying"),
+				#flt(bom_rate.get(item, 0), precision)
+			])	
+	elif ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		for item in sorted(item_map):
 			#avg_sales = get_avg_sales_qty(item.name) or 0.0
 			data.append([item.name, item["item_name"], item.actual_qty, item.stock_uom, item.warehouse, item.location_bin,
@@ -60,7 +71,13 @@ def execute(filters=None):
 def get_columns(filters):
 	"""return columns based on filters"""
 
-	if ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
+	if "PERDANA DIESEL" in cstr(frappe.db.get_single_value('Global Defaults', 'default_company')):
+		columns = [_("Item") + ":Link/Item:125", _("Description") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
+			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
+			_("Sales Price List") + "::240",
+			_("Valuation Rate") + ":Currency:80", _("Last Purchase Rate") + ":Currency:90",
+			_("Brand") + ":Link/Brand:100", _("Item Group") + ":Link/Item Group:125", _("Item Name") + "::150"]
+	elif ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		columns = [_("Item") + ":Link/Item:125", _("Item Name") + "::200", _("Actual Qty") + ":Float:75",  _("UOM") + ":Link/UOM:65", 
 			_("Warehouse") + ":Link/Warehouse:125", _("Location") + "::80", _("Sales Avg/30d") + ":Float:100",_("Age Days") + "::70",
 			_("Sales Price List") + "::240",

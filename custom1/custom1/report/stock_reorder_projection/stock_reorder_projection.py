@@ -61,7 +61,7 @@ def get_columns():
 
 def get_item_info():
 	return frappe.db.sql("""select it.name, it.stock_uom, sum(bin.actual_qty) as actual_qty, it.item_name, it.description, item_group, brand
-			from `tabItem` it, `tabBin` bin Where it.item_code=bin.item_code group by
+			from `tabItem` it, `tabBin` bin Where it.item_code=bin.item_code and it.disabled=0 group by
 			it.name, it.stock_uom, it.item_name, it.description, item_group, brand""", as_dict=1)
 
 def get_consumed_items(condition):

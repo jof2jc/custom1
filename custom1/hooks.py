@@ -15,8 +15,13 @@ fixtures = [
 		{
         		"doctype": "Custom Field",
 		        "filters": {
-        				"dt": ["in", ["Item Group"]],
-				        "fieldname": ["in", ["marketplace_fees","marketplace_fee_setup"]]
+        				"dt": ["in", ["Journal Entry"]]
+        		}
+    		},
+		{
+        		"doctype": "Custom Script",
+		        "filters": {
+        				"dt": ["in", ["Journal Entry"]]
         		}
     		}
 ]

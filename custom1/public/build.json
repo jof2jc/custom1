@@ -26,6 +26,9 @@
 	"js/report1.min.js": [
 		"public/js/frappe/report/reportview1.js"
 	],
+	"js/zplbrowserprint.min.js": [
+		"public/js/BrowserPrint-2.0.0.75.js"
+	],
 	 "css/desk1.min.css": [
        		 "public/css/desktop.css"
     	]

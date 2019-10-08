@@ -261,7 +261,7 @@ def si_before_insert(self, method):
 		if self.order_status:
 			if self.order_status.upper() not in status_order and "SEDANG DIPROSES" not in self.order_status.upper() and "SUDAH DIPROSES" not in self.order_status.upper() and "DIPROSES PELAPAK" not in self.order_status.upper():
 				frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
-			elif "J&T" in self.courier.upper() == "J&T" and not self.awb_no:
+			elif ("J&T" in self.courier.upper() or "CEPAT" in self.courier.upper()) and not self.awb_no:
 				frappe.throw(_("AWB J&T Belum Diproses: {0}").format(cstr(self.no_online_order)))
 
 
@@ -735,7 +735,7 @@ def update_default_fiscal_year():
 
 def delete_old_docs_daily1():
 	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 and folder in ('Home/Attachments') 
-		and file_name not like '%into-the-dawn%' and file_name not like '%Generate_Template%' 
+		and file_name not like '%into-the-dawn%' and file_name not like '%.png%' and file_name not like '%Generate_Template%' 
 		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
 
 	if old_docs:

@@ -419,8 +419,8 @@ def si_before_insert(self, method):
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):
 				self.total_qty = flt(self.total_qty) + flt(d.qty)
 
-			if "lazada_sku" in frappe.db.get_table_columns(d.doctype):
-				self.shipping_fee = flt(self.shipping_fee) + flt(d.shipping_fee)
+			#if "lazada_sku" in frappe.db.get_table_columns(d.doctype):
+			#	self.shipping_fee = flt(self.shipping_fee) + flt(d.shipping_fee)
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
@@ -429,9 +429,11 @@ def si_before_insert(self, method):
 		if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
 			temp = frappe.generate_hash()[:12].upper()
 			self.awb_no = temp #+ "-" + self.no_online_order[-5:]
-		
+
+	#frappe.throw(_("SHipping Fee : {0}").format(self.shipping_fee))
+
 	if self.shipping_fee:
-		shipping_fee = 0.0 
+		#shipping_fee = 0.0 
 		if not flt(cstr(self.shipping_fee)):
 			shipping_fee = flt(cstr(self.shipping_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.shipping_fee or "0"))))
 			self.shipping_fee = shipping_fee #cstr(shipping_fee).replace(".","")
@@ -452,18 +454,24 @@ def si_before_insert(self, method):
 
 		#if self.courier:
 		#	self.courier = self.courier.upper()
-		is_shipping = 1
+		is_shipping = 0
 
-		for c in no_courier:
-			if c not in self.courier.upper():
-				is_shipping = 0	
-				self.shipping_fee = "0"
-				if "J&T" in self.courier.upper() and self.company in ("AN Electronic") and not self.awb_no:
-					is_shipping = 1
-			elif "CASHLESS" in self.courier.upper():
-				is_shipping = 0	
-				self.shipping_fee = "0"
+		#for c in no_courier:
+		if "POS" in self.courier.upper() or "WAHANA" in self.courier.upper() or "TIKI" in self.courier.upper() or "JNE" in self.courier.upper():
+			is_shipping = 1	
+			#self.shipping_fee = "0"
+			#if "J&T" in self.courier.upper() and self.company in ("AN Electronic") and not self.awb_no:
+			#	is_shipping = 1
+		else:
+			is_shipping = 0
+			self.shipping_fee = "0"
+
+		if "CASHLESS" in self.courier.upper():
+			is_shipping = 0	
+			self.shipping_fee = "0"
 	
+		#frappe.throw(_("SHipping Fee : {0}, is_shipping: {1}").format(self.no_online_order or "", is_shipping))
+
 		if self.shipping_fee and account_head and is_shipping:
 			self.append("taxes", {
 				"charge_type": "Actual",
@@ -536,6 +544,13 @@ def get_last_rate_by_customer(customer,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
 		where si.docstatus=1 and customer like %s and item_code=%s
 		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + customer + "%"),item_code), as_dict=0)
+
+@frappe.whitelist()
+def get_last_rate_by_supplier(supplier,item_code):
+	return frappe.db.sql('''select si_item.rate from `tabPurchase Invoice` si join `tabPurchase Invoice Item` si_item on si.name=si_item.parent
+		where si.docstatus=1 and supplier like %s and item_code=%s
+		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + supplier + "%"),item_code), as_dict=0)
+
 
 @frappe.whitelist()
 def get_open_customer(customer,name):

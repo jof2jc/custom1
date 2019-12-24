@@ -110,11 +110,21 @@ def set_si_autoname(doc, method):
 			
 		doc.name = make_autoname(_series)
 
+	elif doc.doctype in("Stock Entry"):
+		if "phase" in frappe.db.get_table_columns(doc.doctype) and "awb_no" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: 
+			if doc.phase and doc.awb_no:
+				_month = getdate(doc.posting_date).strftime('%m')
+				_year = getdate(doc.posting_date).strftime('%y')
+				doc.name = make_autoname(doc.awb_no + "-" + doc.phase + "-." + _year + "." + _month + ".-.##")
+	
+				doc.title = doc.awb_no + "-" + doc.phase
+				return
+
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company") and "no_online_order" in frappe.db.get_table_columns(doc.doctype):
 		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
 
-		if doc.no_online_order and len(doc.no_online_order) > 10:
+		if doc.no_online_order and len(cstr(doc.no_online_order)) >= 10:
 			if not doc.is_return:
 				doc.name = doc.no_online_order 
 			else:
@@ -221,7 +231,7 @@ def validate_selling_price(it):
 				""", (it.item_code, it.warehouse))
 	if last_valuation_rate:
 		last_valuation_rate_in_sales_uom = last_valuation_rate[0][0] / (it.conversion_factor or 1)
-		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom) * 0.97):
+		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom)):
 			frappe.throw("Selling rate {0} is below its valuation rate: {1}".format(cstr(it.rate), it.item_code))
 
 @frappe.whitelist()
@@ -236,6 +246,179 @@ def submit_awb_invoice(ref_no):
 		inv.submit()
 		frappe.db.commit()
 		return
+
+def find_nth(haystack, needle, n):
+    start = haystack.find(needle)
+    while start >= 0 and n > 1:
+        start = haystack.find(needle, start+len(needle))
+        n -= 1
+    return start
+
+@frappe.whitelist()
+def create_ste_delivery(ref_no):
+	doc = {}
+	prev = {}
+	awb_no = ""
+	item_code = ""
+	design = ""
+	message = []
+	p = []
+
+	if ref_no.find("-") >= 0 and find_nth(ref_no,"-",2) > 0:
+		a = ref_no.split("-",2)
+		awb_no = a[0]
+		item_code = a[1]
+		design = a[2]
+	else:
+		awb_no = ref_no
+		
+	if not item_code:
+		p = frappe.db.sql('''select name from `tabStock Entry` where awb_no=%s and docstatus=1 and ifnull(phase,'')<>'' 
+				order by creation desc limit 1''', awb_no, as_dict=0)
+	else:
+		p = frappe.db.sql('''select st.name from `tabStock Entry` st join `tabStock Entry Detail` it on it.parent=st.name 
+				where st.awb_no=%s and st.docstatus=1 and ifnull(st.phase,'')<>'' and it.item_code=%s 
+				order by st.creation desc limit 1''', (awb_no,item_code), as_dict=0)
+
+	#prev = frappe.get_doc("Stock Entry", {"awb_no":ref_no, "phase":"Pickup", "docstatus":1}) 
+	if p:
+		prev = frappe.get_doc("Stock Entry", cstr(p[0][0])) 
+	else:
+		message.append("Error")
+		message.append("AWB No: {0}. Please check previous entry has been made".format(awb_no))
+		return message
+
+	#if frappe.db.get_value("Stock Entry", {"awb_no":ref_no, "phase":"Delivery", "docstatus":1}, "name"):
+	if prev.phase == "Delivery":
+		message.append("Error")
+		message.append("AWB No: {0}. Status is delivered".format(awb_no))
+		return message
+
+	if prev:
+		doc = frappe.new_doc("Stock Entry")
+		doc.posting_date = nowdate()
+		doc.posting_time = nowtime()
+
+		if prev.phase == "New Order":
+			doc.purpose = "Material Transfer"
+			doc.phase = "Printing"
+			doc.awb_no = prev.awb_no
+			doc.from_warehouse = "Printing - YJ"
+			doc.to_warehouse = "QC - YJ"
+		elif prev.phase == "Printing":
+			message.append("Error")
+			message.append("AWB No: {0} has not passed QC yet".format(awb_no))
+			return message
+		elif prev.phase == "QC":
+			doc.purpose = "Material Issue"
+			doc.phase = "Delivery"
+			doc.awb_no = prev.awb_no
+			doc.from_warehouse = "Packing - YJ"
+			doc.to_warehouse = ""
+		else:
+			message.append("Error")
+			message.append("Invalid AWB {0}. Previous Status: {1}".format(awb_no,prev.phase))
+
+
+		doc.title = doc.phase +"-"+ doc.purpose
+
+		if prev.phase == "QC":
+			for d in prev.items:
+				doc.append("items",{
+						"item_code": d.item_code,
+						"item_name": d.item_name,	
+						"s_warehouse": doc.from_warehouse,
+						"t_warehouse": doc.to_warehouse,
+						"qty": d.qty,
+						"basic_rate":d.basic_rate,
+						"basic_amount":d.basic_amount,
+						"design": d.design
+				})
+		else:
+			doc.append("items",{
+						"item_code": item_code,
+						#"item_name": d.item_name,	
+						"s_warehouse": doc.from_warehouse,
+						"t_warehouse": doc.to_warehouse,
+						"qty": 1,
+						#"basic_rate":d.basic_rate,
+						#"basic_amount":d.basic_amount,
+						"design": design
+				})
+
+		doc.flags.ignore_permissions = True
+		doc.insert()
+		doc.submit()
+		frappe.db.commit()
+
+		message.append("Success")
+		message.append(doc.name)
+		return message
+	else:
+		message.append("Error")
+		message.append("AWB {0} is not yet ready for pickup".format(awb_no))
+		return message
+
+@frappe.whitelist()
+def populate_prev_items(ref_no):
+	prev = []
+	new_order = {}
+	awb_no = ""
+	item_code = ""
+	design = ""
+	message = []
+	msg_error = []
+
+	total_order = 0
+	total_printed = 0
+
+	if ref_no.find("-") >= 0 and find_nth(ref_no,"-",2) > 0:
+		a = ref_no.split("-",2)
+		awb_no = a[0]
+		item_code = a[1]
+		design = a[2]
+	else:
+		awb_no = ref_no
+		
+	new_order = frappe.get_doc("Stock Entry", {"awb_no":ref_no, "phase":"New Order", "docstatus":1}) 
+	#prev = frappe.get_doc("Stock Entry", {"awb_no":ref_no, "phase":"Printing", "docstatus":1}) 
+
+	#prev = frappe.db.sql('''select sum(qty) as qty from `tabStock Entry` st join `tabStock Entry Detail` it on it.parent=st.name 
+	#			where st.awb_no=%s and st.docstatus=1 and ifnull(st.phase,'')='Printing'
+	#			order by st.creation desc limit 1''', awb_no, as_dict=0)
+	
+	if not new_order:
+		message.append("Error")
+		message.append("AWB No: {0} Not Found in Order Data".format(awb_no))
+		return message
+
+
+	#if new_order:
+	#	for d in new_order.items:
+	#		total_order += d.qty
+
+	if new_order:
+		for d in new_order.items:
+			#total_printed += d.qty
+
+			message.append({
+						"item_code": d.item_code,
+						"item_name": d.item_name,	
+						"s_warehouse": d.s_warehouse,
+						"t_warehouse": d.t_warehouse,
+						"qty": d.qty,
+						"conversion_factor": d.conversion_factor,
+						"basic_rate":d.basic_rate,
+						"basic_amount":d.basic_amount,
+						"design": d.design
+					})
+
+		#if total_order != total_printed:
+		#	msg_error.append("Error")
+		#	msg_error.append("Qty difference is found between Order:{0} and Printed:{1} for AWB No: {2}".format(cstr(total_order),cstr(total_printed),awb_no))
+		#	return msg_error
+		#else:
+		return message
 
 def si_before_insert(self, method):
 	if self.company: #make sure only import online_order
@@ -255,14 +438,14 @@ def si_before_insert(self, method):
 	cost_center = ""
 
 	#make sure only import order yg sudah diproses
-	status_order = ["AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY_TO_SHIP","DIPROSES PELAPAK"]
+	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY_TO_SHIP","DIPROSES PELAPAK"]
 
 	if "order_status" in frappe.db.get_table_columns(self.doctype):
 		if self.order_status:
 			if self.order_status.upper() not in status_order and "SEDANG DIPROSES" not in self.order_status.upper() and "SUDAH DIPROSES" not in self.order_status.upper() and "DIPROSES PELAPAK" not in self.order_status.upper():
 				frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
-			elif ("J&T" in self.courier.upper() or "CEPAT" in self.courier.upper()) and not self.awb_no:
-				frappe.throw(_("AWB J&T Belum Diproses: {0}").format(cstr(self.no_online_order)))
+			#elif ("J&T" in self.courier.upper() or "CEPAT" in self.courier.upper()) and not self.awb_no:
+			#	frappe.throw(_("AWB J&T Belum Diproses: {0}").format(cstr(self.no_online_order)))
 
 
 	status_order = ["BATAL","BELUM BAYAR","PENDING","UNPAID","CANCEL","MENUNGGU PEMBAYARAN"]
@@ -288,14 +471,14 @@ def si_before_insert(self, method):
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
 
-	if self.naming_series and len(cstr(self.naming_series)) > 10:
+	if self.naming_series and len(cstr(self.naming_series)) >= 10:
 		no_online_order = self.naming_series.strip()
-		self.no_online_order = no_online_order
+		self.no_online_order = cstr(no_online_order)
 
 		if (self.is_return):
 			self.name = "R-" + self.no_online_order
 		else:
-			self.name = self.no_online_order
+			self.name = cstr(self.no_online_order)
 
 		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 		if self.no_online_order and same_invoice:
@@ -309,7 +492,7 @@ def si_before_insert(self, method):
 
 	self.due_date = add_days(self.posting_date, 14);
 
-	if self.no_online_order and len(self.no_online_order) > 10:
+	if self.no_online_order and len(cstr(self.no_online_order)) >= 10:
 		if (self.is_return):
 			self.naming_series = "R/.no_online_order.-.##"
 		else:
@@ -335,9 +518,9 @@ def si_before_insert(self, method):
 				(item_name like %s or description like %s) limit 1''', 
 				(("%" + d.item_code.strip() + "%"),("%" + d.item_code.strip() + "%")), as_dict=0)
 
-			if not item_code:
-				item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
-						(%s like concat (%s,item_code,%s)) limit 1''', (d.item_code.strip(),"%","%"), as_dict=0)
+			#if not item_code:
+			#	item_code = frappe.db.sql('''select item_code from `tabItem` where disabled=0 and 
+			#			(%s like concat (%s,item_code,%s)) limit 1''', (d.item_code.strip(),"%","%"), as_dict=0)
 
 			if item_code:
 				d.item_code = cstr(item_code[0][0])
@@ -397,8 +580,8 @@ def si_before_insert(self, method):
 			if _rate:
 				d.rate = _rate #cstr(_rate).replace(".","")
 				d.price_list_rate = _rate
-				#if company == "BOMBER STORE":
-				#	validate_selling_price(d)
+				if company == "BOMBER STORE":
+					validate_selling_price(d)
 
 			""" Get marketplace fee for official store """
 			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or "Products"
@@ -457,18 +640,20 @@ def si_before_insert(self, method):
 		is_shipping = 0
 
 		#for c in no_courier:
-		if "POS" in self.courier.upper() or "WAHANA" in self.courier.upper() or "TIKI" in self.courier.upper() or "JNE" in self.courier.upper():
-			is_shipping = 1	
-			#self.shipping_fee = "0"
-			#if "J&T" in self.courier.upper() and self.company in ("AN Electronic") and not self.awb_no:
-			#	is_shipping = 1
-		else:
-			is_shipping = 0
-			self.shipping_fee = "0"
 
-		if "CASHLESS" in self.courier.upper():
-			is_shipping = 0	
-			self.shipping_fee = "0"
+		if self.courier:		
+			if "POS" in self.courier.upper() or "WAHANA" in self.courier.upper() or "TIKI" in self.courier.upper() or "JNE" in self.courier.upper():
+				is_shipping = 1	
+				#self.shipping_fee = "0"
+				#if "J&T" in self.courier.upper() and self.company in ("AN Electronic") and not self.awb_no:
+				#	is_shipping = 1
+			else:
+				is_shipping = 0
+				self.shipping_fee = "0"
+
+			if "CASHLESS" in self.courier.upper():
+				is_shipping = 0	
+				self.shipping_fee = "0"
 	
 		#frappe.throw(_("SHipping Fee : {0}, is_shipping: {1}").format(self.no_online_order or "", is_shipping))
 

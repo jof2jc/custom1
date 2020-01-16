@@ -47,7 +47,7 @@ def execute(filters=None):
 			row.append(item_row_tax.get(d.name, {}).get(tax, 0))
 
 		total_tax = sum(row[last_col:])
-		row += [total_tax, d.base_net_amount + total_tax, (total_tax/d.qty)+d.base_net_rate, company_currency]
+		row += [total_tax, d.base_net_amount + total_tax, (total_tax/d.qty if d.qty else 1.0)+d.base_net_rate, company_currency]
 
 		data.append(row)
 

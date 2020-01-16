@@ -176,7 +176,8 @@ doc_events = {
     },
     "Stock Entry": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
+	"after_insert": "custom1.custom1.custom1.submit_after_save"
     },
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",

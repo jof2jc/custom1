@@ -112,12 +112,28 @@ def set_si_autoname(doc, method):
 
 	elif doc.doctype in("Stock Entry"):
 		if "phase" in frappe.db.get_table_columns(doc.doctype) and "awb_no" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: 
-			if doc.phase and doc.awb_no:
+			if doc.phase:
+				prev_awb = frappe.db.sql('''select name from `tabStock Entry` where docstatus=1 and awb_no=%s and phase='New Order' order by creation desc limit 1''', doc.awb_no, as_dict=0)
+
+				if prev_awb and doc.phase == "New Order":
+					frappe.throw("New Order error. Same AWB No is found")
+					prev_awb=None
+
+				prev_awb = frappe.db.sql('''select name from `tabStock Entry` where docstatus=1 and awb_no=%s and phase=%s order by creation desc limit 1''', (doc.awb_no,doc.phase), as_dict=0)
+
+				if prev_awb:
+					frappe.throw("Stage: " + doc.phase + ". Same AWB No is found")
+
 				_month = getdate(doc.posting_date).strftime('%m')
 				_year = getdate(doc.posting_date).strftime('%y')
-				doc.name = make_autoname(doc.awb_no + "-" + doc.phase + "-." + _year + "." + _month + ".-.##")
-	
-				doc.title = doc.awb_no + "-" + doc.phase
+
+				if doc.awb_no:
+					doc.name = make_autoname(doc.awb_no + "-" + doc.phase + "-." + _year + "." + _month + ".-.##")
+					doc.title = doc.awb_no + "-" + doc.phase
+				else:
+					doc.name = make_autoname(doc.phase + "-." + _year + "." + _month + ".-.##")
+					doc.title = doc.phase
+				
 				return
 
 	is_online_shop=0;
@@ -221,8 +237,8 @@ def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
 	last_purchase_rate_in_sales_uom = last_purchase_rate / (it.conversion_factor or 1)
 	
-	if flt(it.rate) < flt(flt(last_purchase_rate_in_sales_uom) * 0.97):
-		frappe.throw("Selling rate {0} is below its last purchase rate: {1}".format(cstr(it.rate), it.item_code))
+	#if flt(it.rate) < flt(flt(last_purchase_rate_in_sales_uom) * 0.97):
+	#	frappe.throw("Selling rate {0} is below its last purchase rate: {1}".format(cstr(it.rate), it.item_code))
 
 	last_valuation_rate = frappe.db.sql("""
 				SELECT valuation_rate FROM `tabStock Ledger Entry` WHERE item_code = %s
@@ -233,6 +249,7 @@ def validate_selling_price(it):
 		last_valuation_rate_in_sales_uom = last_valuation_rate[0][0] / (it.conversion_factor or 1)
 		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom)):
 			frappe.throw("Selling rate {0} is below its valuation rate: {1}".format(cstr(it.rate), it.item_code))
+
 
 @frappe.whitelist()
 def submit_awb_invoice(ref_no):
@@ -253,6 +270,12 @@ def find_nth(haystack, needle, n):
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
+
+def submit_after_save(self, method):
+	if "phase" in frappe.db.get_table_columns(self.doctype) and "awb_no" in frappe.db.get_table_columns(self.doctype):
+		self.submit()
+		frappe.db.commit()
+		return
 
 @frappe.whitelist()
 def create_ste_delivery(ref_no):
@@ -299,13 +322,25 @@ def create_ste_delivery(ref_no):
 		doc.posting_date = nowdate()
 		doc.posting_time = nowtime()
 
-		if prev.phase == "New Order":
+		if prev.phase == "Items Collected":
 			doc.purpose = "Material Transfer"
-			doc.phase = "Printing"
+			doc.phase = "Printed"
 			doc.awb_no = prev.awb_no
 			doc.from_warehouse = "Printing - YJ"
 			doc.to_warehouse = "QC - YJ"
-		elif prev.phase == "Printing":
+
+			if not prev.is_job:			
+				doc.purpose = "Material Issue"
+				doc.phase = "Delivery"
+				doc.awb_no = prev.awb_no
+				doc.from_warehouse = "Packing - YJ"
+				doc.to_warehouse = ""
+
+		elif prev.phase == "New Order":
+			message.append("Error")
+			message.append("AWB No: {0} has not passed Items Collection QC".format(awb_no))
+			return message
+		elif prev.phase == "Printed":
 			message.append("Error")
 			message.append("AWB No: {0} has not passed QC yet".format(awb_no))
 			return message
@@ -322,7 +357,7 @@ def create_ste_delivery(ref_no):
 
 		doc.title = doc.phase +"-"+ doc.purpose
 
-		if prev.phase == "QC":
+		if prev.phase == "QC" or doc.phase == "Delivery":
 			for d in prev.items:
 				doc.append("items",{
 						"item_code": d.item_code,
@@ -665,8 +700,9 @@ def si_before_insert(self, method):
 				"description": "Ongkir",
 				"tax_amount": flt(self.shipping_fee)
 			})
-		account_insurance = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Insurance Fee%' limit 1''', as_dict=0) or \
-					frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Asuransi%' limit 1''', as_dict=0)
+		account_insurance = ""
+		#frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Insurance Fee%' limit 1''', as_dict=0) or \
+		#			frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Asuransi%' limit 1''', as_dict=0)
 
 		if self.insurance_fee and account_insurance:
 			self.append("taxes", {
@@ -727,8 +763,8 @@ def an_get_invoice_by_orderid(order_id, customer):
 @frappe.whitelist()
 def get_last_rate_by_customer(customer,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
-		where si.docstatus=1 and customer like %s and item_code=%s
-		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + customer + "%"),item_code), as_dict=0)
+		where si.docstatus=1 and customer=%s and item_code=%s
+		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (customer,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_last_rate_by_supplier(supplier,item_code):

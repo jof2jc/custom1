@@ -86,10 +86,17 @@ def get_return_items(condition):
 		si.update_stock = 1 %s
 		group by si_item.item_code""" % (condition), as_dict=1)
 
+	
+	dn_items = frappe.db.sql("""select si_item.item_code, sum(abs(si_item.qty)) as return_qty
+		from `tabDelivery Note` si, `tabDelivery Note Item` si_item
+		where si.name = si_item.parent and si.docstatus = 1 and si.is_return = 1 %s
+		group by si_item.item_code""" % (condition), as_dict=1)
 
 	dn_item_map = {}
 
 	for item in si_items:
+		dn_item_map.setdefault(item.item_code, item)
+	for item in dn_items:
 		dn_item_map.setdefault(item.item_code, item)
 
 	return dn_item_map
@@ -107,9 +114,17 @@ def get_delivered_items(condition):
 		si.update_stock = 1 %s
 		group by si_item.item_code""" % (condition), as_dict=1)
 
+	dn_items = frappe.db.sql("""select si_item.item_code, sum(si_item.qty) as si_qty
+		from `tabDelivery Note` si, `tabDelivery Note Item` si_item
+		where si.name = si_item.parent and si.docstatus = 1 and si.is_return != 1 %s
+		group by si_item.item_code""" % (condition), as_dict=1)
+
 	dn_item_map = {}
 
 	for item in si_items:
+		dn_item_map.setdefault(item.item_code, item)
+
+	for item in dn_items:
 		dn_item_map.setdefault(item.item_code, item)
 
 	return dn_item_map

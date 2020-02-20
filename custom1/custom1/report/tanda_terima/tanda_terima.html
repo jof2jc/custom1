@@ -1,3 +1,5 @@
+
+
 <style>
 	table {
 		   width: 100%;
@@ -24,7 +26,7 @@
 	{%= frappe.datetime.str_to_user(filters.to_date) %}
 </h5>
 {% var grand_total = 0; %}
-
+{% if (filters.company.indexOf('PINA BANGUNAN') < 0){ %}
 <table style="border-bottom: 1px solid;">
 	<thead>
 		<tr style="border-top: 1px solid; border-bottom: 1px solid;">
@@ -88,7 +90,7 @@
 				Pembayaran transfer dapat dilakukan ke: <br>
 				Bank Account (BCA) 6010131497 A/N HENRY <br><br> 
 				Atau Lewat Giro BCA : 6850199807 A/N HENDRA JUTAWAN
-				{% } else { %}
+				{% } else if (filters.footnote.length > 4) { %}
 					{%= filters.footnote || "" %}
 				{% } %}
 				
@@ -97,3 +99,60 @@
 	</tr>
 
 </table>
+{% } else { %}
+<h5>{%= 'No: TT-' + ('0' + (new Date(filters.to_date).getMonth()+1)).slice(-2) + (new Date(filters.to_date.toString()).getYear().toString()).slice(-2) + '-' + filters.footnote %}</h5>
+<table style="border-bottom: 1px solid;">
+	<thead>
+		<tr style="border-top: 1px solid; border-bottom: 1px solid;">
+				<th style="width: 10%">{%= __("No") %}</th>
+				<th style="width: 30%">{%= __("Date") %}</th>
+				<th style="width: 30%">{%= __("Invoice No") %}</th>
+				<th style="width: 30%; text-align: right;">{%= __("Grand Total") %}</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for(var i=0, l=data.length; i<l; i++) { %}
+			<tr>
+					<td>{%= i+1 %}</td>
+					<td>{%= frappe.datetime.str_to_user(data[i][__("Posting Date")]) %}</td>
+					<td>{%= data[i][__("Invoice")] %}</td>
+					<td style="text-align: right">
+						{%= data[i]["Outstanding Amount"].toLocaleString() %}</td>
+			</tr>
+			{% grand_total += data[i]["Outstanding Amount"] %}
+		{% } %}
+			<tr style="font-weight: bold;border-top: 1px solid;">
+					<td colspan=3 style="text-align: right">{%= __("TOTAL IDR") %}</td>
+					<td style="text-align: right">
+						{%= grand_total.toLocaleString() %}</td>
+			</tr>
+	</tbody>
+</table>
+<br>
+
+<table>
+	<tr>
+		<td width="50%" align=center style="border: 1px solid;">
+				{%= __("Tanda Terima") %}
+				<br><br><br><br><br><br><br>
+				{%= filters.customer || data[0][__("Customer")] %}
+		</td>
+
+		<td width="50%" align=center style="border: 1px solid;">
+				{%= __("Hormat Kami") %}
+				<br><br><br><br><br><br><br>
+				{%= __("Pina Bangunan") %}
+		</td>
+	</tr>
+	<tr>
+		<td colspan=2>
+				{% if (filters.footnote.length > 4) { %}
+					{%= filters.footnote || "" %}
+				{% } %}
+				
+		</td>
+
+	</tr>
+
+</table>
+{% } %}

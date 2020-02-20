@@ -14,15 +14,8 @@ app_version = "0.0.1"
 fixtures = [    
 		{
         		"doctype": "Custom Field",
-		        "dt": ["in", ["Customer","Company","Payment Entry Reference", "Payment Entry", "Sales Invoice","Sales Invoice Item"]],
-				        "fieldname": ["in", ["import_time","is_online_shop","actual_shipping_fee","actual_insurance_fee","order_status","awb_no","delivery_date","alamat_npwp","dropshipper","lazada_sku","discount_marketplace","shipping_fee","picked_and_packed","is_online_shop","generate_awb_barcode","import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
-    		},
-		{
-        		"doctype": "Property Setter",
-		        "filters": {
-					"doc_type": ["in", ["Customer","Company","Payment Entry Reference", "Payment Entry", "Sales Invoice","Sales Invoice Item"]],
-				        "field_name": ["in", ["import_time","is_online_shop","actual_shipping_fee","actual_insurance_fee","order_status","awb_no","delivery_date","alamat_npwp","dropshipper","lazada_sku","discount_marketplace","shipping_fee","picked_and_packed","is_online_shop","generate_awb_barcode","import_time","actual_shipping_fee","awb_no","courier","cb_marketplace2","sb_marketplace","cb_marketplace","ship_to","recipient","recipient_number","ordered_amount","no_online_order","insurance_fee","shipping_fee","get_invoices","online_order_ids"]]
-			}
+		        "dt": ["in", ["Journal Entry"]],
+				        "fieldname": ["in", ["sc_expenses","expenses"]]
     		}
 ]
 

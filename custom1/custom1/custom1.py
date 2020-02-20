@@ -12,7 +12,7 @@ from erpnext.accounts.utils import get_account_currency, get_balance_on
 import erpnext.accounts.utils
 from re import sub
 from decimal import Decimal
-
+from frappe.model.mapper import get_mapped_doc
 
 def shoutout():
 	print 'yay!'
@@ -72,7 +72,7 @@ def set_si_autoname(doc, method):
 
 	if doc.doctype not in ("Quotation", "Sales Order", "Delivery Note","Sales Invoice","Supplier Quotation","Material Request", \
 		"Purchase Order","Purchase Receipt","Purchase Invoice","Payment Entry","Journal Entry","Stock Entry","Stock Reconciliation", \
-		"Request for Quotation"):
+		"Request for Quotation","Billing Receipt"):
 		return
 
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: # and doc.company in ("PT BLUE OCEAN LOGISTICS"):
@@ -110,6 +110,10 @@ def set_si_autoname(doc, method):
 			
 		doc.name = make_autoname(_series)
 
+	elif doc.doctype in ("Purchase Receipt") and "Pina Bangunan" in doc.company:
+		if doc.supplier_delivery_note:		
+			doc.name = supplier_delivery_note
+
 	elif doc.doctype in("Stock Entry"):
 		if "phase" in frappe.db.get_table_columns(doc.doctype) and "awb_no" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: 
 			if doc.phase:
@@ -121,7 +125,7 @@ def set_si_autoname(doc, method):
 
 				prev_awb = frappe.db.sql('''select name from `tabStock Entry` where docstatus=1 and awb_no=%s and phase=%s order by creation desc limit 1''', (doc.awb_no,doc.phase), as_dict=0)
 
-				if prev_awb:
+				if prev_awb and doc.awb_no:
 					frappe.throw("Stage: " + doc.phase + ". Same AWB No is found")
 
 				_month = getdate(doc.posting_date).strftime('%m')
@@ -169,12 +173,14 @@ def si_on_change(self, method):
 		self.name = cstr(invoice_no[0][0])
 
 def si_before_save(self, method):
-	if self.company not in ("SILVER PHONE", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA"):
-		return
-
 	#frappe.msgprint(cstr(self.name))
-	if self.no_online_order and len(cstr(self.no_online_order)) > 10 and self.name != self.no_online_order:
-		self.name = self.no_online_order
+	return
+	
+	if self.no_online_order and len(cstr(self.no_online_order)) > 10 and self.name != self.no_online_order:	
+               self.name = self.no_online_order
+			
+
+			
 
 def si_validate(self, method):
 	is_online_shop=0;
@@ -250,6 +256,80 @@ def validate_selling_price(it):
 		if is_stock_item and flt(it.rate) < flt(flt(last_valuation_rate_in_sales_uom)):
 			frappe.throw("Selling rate {0} is below its valuation rate: {1}".format(cstr(it.rate), it.item_code))
 
+@frappe.whitelist()
+def make_purchase_order_for_drop_shipment(source_name, target_doc=None, for_supplier=None):
+	def set_missing_values(source, target):
+		if for_supplier:
+			target.supplier = for_supplier
+		target.apply_discount_on = ""
+		target.additional_discount_percentage = 0.0
+		target.discount_amount = 0.0
+
+		if for_supplier:
+			default_price_list = frappe.get_value("Supplier", for_supplier, "default_price_list")
+			if default_price_list:
+				target.buying_price_list = default_price_list
+
+		if any( item.delivered_by_supplier==1 for item in source.items):
+			if source.shipping_address_name:
+				target.shipping_address = source.shipping_address_name
+				target.shipping_address_display = source.shipping_address
+			else:
+				target.shipping_address = source.customer_address
+				target.shipping_address_display = source.address_display
+
+			target.customer_contact_person = source.contact_person
+			target.customer_contact_display = source.contact_display
+			target.customer_contact_mobile = source.contact_mobile
+			target.customer_contact_email = source.contact_email
+
+		else:
+			target.customer = ""
+			target.customer_name = ""
+
+		target.run_method("set_missing_values")
+		target.run_method("calculate_taxes_and_totals")
+
+	def update_item(source, target, source_parent):
+		target.schedule_date = source.delivery_date
+		target.qty = flt(source.qty) - flt(source.ordered_qty)
+		target.stock_qty = (flt(source.qty) - flt(source.ordered_qty)) * flt(source.conversion_factor)
+
+	doclist = get_mapped_doc("Sales Order", source_name, {
+		"Sales Order": {
+			"doctype": "Purchase Order",
+			"field_no_map": [
+				"address_display",
+				"contact_display",
+				"contact_mobile",
+				"contact_email",
+				"contact_person",
+				"taxes_and_charges"
+			],
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Sales Order Item": {
+			"doctype": "Purchase Order Item",
+			"field_map":  [
+				["name", "sales_order_item"],
+				["parent", "sales_order"],
+				["stock_uom", "stock_uom"],
+				["uom", "uom"],
+				["conversion_factor", "conversion_factor"],
+				["delivery_date", "schedule_date"]
+			],
+			"field_no_map": [
+				"rate",
+				"price_list_rate"
+			],
+			"postprocess": update_item,
+			"condition": lambda doc: doc.ordered_qty < doc.qty #and doc.supplier == for_supplier
+		}
+	}, target_doc, set_missing_values)
+
+	return doclist
 
 @frappe.whitelist()
 def submit_awb_invoice(ref_no):
@@ -273,8 +353,8 @@ def find_nth(haystack, needle, n):
 
 def submit_after_save(self, method):
 	if "phase" in frappe.db.get_table_columns(self.doctype) and "awb_no" in frappe.db.get_table_columns(self.doctype):
-		self.submit()
-		frappe.db.commit()
+		#self.submit()
+		#frappe.db.commit()
 		return
 
 @frappe.whitelist()
@@ -337,9 +417,15 @@ def create_ste_delivery(ref_no):
 				doc.to_warehouse = ""
 
 		elif prev.phase == "New Order":
-			message.append("Error")
-			message.append("AWB No: {0} has not passed Items Collection QC".format(awb_no))
-			return message
+			#message.append("Error")
+			#message.append("AWB No: {0} has not passed Items Collection QC".format(awb_no))
+			#return message
+			doc.purpose = "Material Issue"
+			doc.phase = "Delivery"
+			doc.awb_no = prev.awb_no
+			doc.from_warehouse = "Packing - YJ"
+			doc.to_warehouse = ""
+
 		elif prev.phase == "Printed":
 			message.append("Error")
 			message.append("AWB No: {0} has not passed QC yet".format(awb_no))
@@ -357,7 +443,7 @@ def create_ste_delivery(ref_no):
 
 		doc.title = doc.phase +"-"+ doc.purpose
 
-		if prev.phase == "QC" or doc.phase == "Delivery":
+		if prev.phase == "QC" or doc.phase == "Delivery" or doc.phase == "New Order":
 			for d in prev.items:
 				doc.append("items",{
 						"item_code": d.item_code,
@@ -856,16 +942,20 @@ def get_outstanding_reference_documents2(args):
 		negative_outstanding_invoices = get_negative_outstanding_invoices(args.get("party_type"),
 			args.get("party"), args.get("party_account"), party_account_currency, company_currency)
 
-	# Get positive outstanding sales /purchase invoices/ Fees
 	condition = ""
+	# Get positive outstanding sales /purchase invoices/ Fees
 	if args.get("voucher_type") and args.get("voucher_no"):
-		condition = " and voucher_type='{0}' and voucher_no='{1}'"\
+		condition += " and voucher_type='{0}' and voucher_no='{1}'"\
 			.format(frappe.db.escape(args["voucher_type"]), frappe.db.escape(args["voucher_no"]))
 
 	condition = condition + " and company='{0}'".format(args.get("company"))
 
-	outstanding_invoices = get_outstanding_invoices2(args.get("party_type"), args.get("party"),
-		args.get("party_account"), condition=condition)
+	if args.get("from_date") and args.get("to_date") and not args.get("show_all"):
+		outstanding_invoices = get_outstanding_invoices2(args.get("party_type"), args.get("party"),
+			args.get("party_account"), condition=condition + " and posting_date between '{0}' and '{1}'".format(args.get("from_date"), args.get("to_date")))
+	else:
+		outstanding_invoices = get_outstanding_invoices2(args.get("party_type"), args.get("party"),
+			args.get("party_account"), condition=condition)
 
 	for d in outstanding_invoices:
 		d["exchange_rate"] = 1
@@ -882,8 +972,12 @@ def get_outstanding_reference_documents2(args):
 	# Get all SO / PO which are not fully billed or aginst which full advance not paid
 	orders_to_be_billed = []
 	if (args.get("party_type") != "Student"):
-		orders_to_be_billed =  get_orders_to_be_billed(args.get("posting_date"),args.get("party_type"),
-			args.get("party"), party_account_currency, company_currency,condition=condition)
+		if args.get("from_date") and args.get("to_date") and not args.get("show_all"):
+			orders_to_be_billed =  get_orders_to_be_billed(args.get("posting_date"),args.get("party_type"),
+				args.get("party"), party_account_currency, company_currency,condition=condition + " and transaction_date between '{0}' and '{1}'".format(args.get("from_date"), args.get("to_date")))
+		else:
+			orders_to_be_billed =  get_orders_to_be_billed(args.get("posting_date"),args.get("party_type"),
+				args.get("party"), party_account_currency, company_currency,condition=condition)
 
 	return negative_outstanding_invoices + outstanding_invoices + orders_to_be_billed
 
@@ -951,7 +1045,7 @@ def get_negative_outstanding_invoices(party_type, party, party_account, party_ac
 		where
 			{party_type} = %s and {party_account} = %s and docstatus = 1 and outstanding_amount < 0
 		order by
-			posting_date, name
+			posting_date, name limit 20
 		""".format(**{
 			"rounded_total_field": rounded_total_field,
 			"grand_total_field": grand_total_field,

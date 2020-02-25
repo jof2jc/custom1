@@ -625,6 +625,9 @@ def si_before_insert(self, method):
 		if "is_official_store" in frappe.db.get_table_columns("Customer"):
 			is_official_store = frappe.db.get_value("Customer", {"name":self.customer}, "is_official_store") or "0"
 
+		self.territory = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Territory"}, "for_value") or \
+					frappe.db.get_value("Customer", {"name":self.customer}, "territory") or ""
+
 		for d in self.items:
 			if not d.item_code:
 				frappe.throw(_("Item Code / SKU is required : {0}").format(self.no_online_order))
@@ -657,12 +660,13 @@ def si_before_insert(self, method):
 
 				from erpnext.stock.utils import get_stock_balance
 
-				warehouse = frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
-						frappe.db.get_single_value('Stock Settings', 'default_warehouse')
+				warehouse = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
+						frappe.db.get_single_value('Stock Settings', 'default_warehouse') or ""
 
 				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")
 				if warehouse:
 					d.warehouse = warehouse
+
 				if warehouse and is_stock_item and not frappe.db.get_single_value('Stock Settings', 'allow_negative_stock'):
 					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), self.posting_time)
 					#if d.item_code == "A309PN":

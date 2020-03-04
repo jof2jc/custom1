@@ -82,6 +82,12 @@ def set_si_autoname(doc, method):
 			return
 	
 	if "set_autoname_based_on_posting_date" in frappe.db.get_table_columns("Company") and not doc.name:
+		if doc.doctype in ("Purchase Receipt"):
+			if doc.supplier_delivery_note:	
+				_series = doc.supplier_delivery_note + "-" + doc.naming_series	
+				doc.name = make_autoname(_series)
+				return
+
 		if frappe.db.get_value("Company",doc.company,"set_autoname_based_on_posting_date"):
 			if "transaction_date" in frappe.db.get_table_columns(doc.doctype):
 				posting_date = doc.transaction_date
@@ -109,10 +115,6 @@ def set_si_autoname(doc, method):
 		_series = cstr(doc.naming_series).replace("MM",_month).replace("YY",_year)
 			
 		doc.name = make_autoname(_series)
-
-	elif doc.doctype in ("Purchase Receipt") and "Pina Bangunan" in doc.company:
-		if doc.supplier_delivery_note:		
-			doc.name = supplier_delivery_note
 
 	elif doc.doctype in("Stock Entry"):
 		if "phase" in frappe.db.get_table_columns(doc.doctype) and "awb_no" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: 
@@ -666,7 +668,6 @@ def si_before_insert(self, method):
 				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")
 				if warehouse:
 					d.warehouse = warehouse
-
 				if warehouse and is_stock_item and not frappe.db.get_single_value('Stock Settings', 'allow_negative_stock'):
 					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), self.posting_time)
 					#if d.item_code == "A309PN":
@@ -855,6 +856,12 @@ def get_last_rate_by_customer(customer,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
 		where si.docstatus=1 and customer=%s and item_code=%s
 		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (customer,item_code), as_dict=0)
+
+@frappe.whitelist()
+def get_last_rate_by_customer_so(customer,item_code):
+	return frappe.db.sql('''select si_item.rate_mtr, si_item.rate from `tabSales Order` si join `tabSales Order Item` si_item on si.name=si_item.parent
+		where si.docstatus=1 and customer=%s and item_code=%s
+		and si_item.rate > 0 order by si.transaction_date desc limit 1''', (customer,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_last_rate_by_supplier(supplier,item_code):

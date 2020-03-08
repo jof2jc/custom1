@@ -561,7 +561,7 @@ def si_before_insert(self, method):
 	cost_center = ""
 
 	#make sure only import order yg sudah diproses
-	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY_TO_SHIP","DIPROSES PELAPAK"]
+	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY TO SHIP","READY_TO_SHIP","DIPROSES PELAPAK"]
 
 	if "order_status" in frappe.db.get_table_columns(self.doctype):
 		if self.order_status:
@@ -719,11 +719,11 @@ def si_before_insert(self, method):
 				if mp_fee:
 					d.discount_percentage = mp_fee[0] or 0.0
 				if flt(d.discount_percentage) != 0.0:
-					if ((flt(d.discount_percentage)/100.0 * flt(d.rate)) > mp_fee[1]) and mp_fee[1] > 0:
-						d.rate = flt(d.rate) - flt(mp_fee[1])
+					if ((flt(d.discount_percentage)/100.0 * flt(d.price_list_rate)) > mp_fee[1]) and mp_fee[1] > 0:
+						d.rate = flt(d.price_list_rate) - flt(mp_fee[1])
 					else:
-						d.rate = flt(d.rate) * (100.0 - d.discount_percentage)/100.0
-					d.amount = flt(d.rate) * flt(d.qty)
+						d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
+					d.amount = flt(d.price_list_rate) * flt(d.qty)
 
 			if "total_qty" in frappe.db.get_table_columns(self.doctype):
 				self.total_qty = flt(self.total_qty) + flt(d.qty)

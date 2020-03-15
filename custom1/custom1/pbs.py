@@ -97,16 +97,24 @@ def update_clearance_date2(bank_account, payment_entries=[]):
 			elif not ref_doc.debit_in_account_currency and ref_doc.credit_in_account_currency:
 				debit_amount= ref_doc.credit_in_account_currency
 
+			cheque_no = ""
+			if d.payment_document == "Payment Entry":
+				cheque_no = frappe.db.get_value("Payment Entry", d.payment_entry, "reference_no") or ""
+			elif d.payment_document == "Journal Entry":
+				cheque_no = frappe.db.get_value("Journal Entry", d.payment_entry, "cheque_no") or ""
 
 			if ref_doc:
 				jv = frappe.new_doc("Journal Entry")
+				jv.flags.ignore_permissions = True
+				jv.cheque_no = cheque_no
+				jv.cheque_date = d.clearance_date
 				jv.naming_series = "CLRG/.YY.MM./.###"
-				jv.posting_date = nowdate()
+				jv.posting_date = d.clearance_date
 				jv.posting_time = nowtime()
 				jv.voucher_type = "Journal Entry"
 				jv.title = "Cheque/Giro Clearing"
 				jv.user_remark = "Cheque/Giro Clearing: " + bank_account + ", Ref No: " + d.payment_entry
-				jv.clearance_date = nowdate()
+				jv.clearance_date = d.clearance_date
 
 				jv.append("accounts",{
 						"account": bank_account,
@@ -122,10 +130,12 @@ def update_clearance_date2(bank_account, payment_entries=[]):
 						"credit_in_account_currency": debit_amount
 					})
 
-				jv.flags.ignore_permissions = True
 				jv.insert()
 				jv.submit()
-				#frappe.msgprint("Voucher is generated : " + jv.name)
+				#frappe.msgprint("Clearance Date : " + cstr(d.clearance_date))
+				frappe.db.sql("""update `tab{0}` set clearance_date = %s where name=%s""".format(jv.doctype), 
+				(d.clearance_date, jv.name))
+
 				frappe.db.commit()
 				#frappe.msgprint("Successfully generated clearing journal voucher: " + jv.name)
 		#else:

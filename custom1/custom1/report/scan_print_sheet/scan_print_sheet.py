@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import msgprint, _
-from frappe.utils import flt,cstr, nowdate, date_diff, getdate
+from frappe.utils import flt,cstr, nowdate, date_diff, getdate, format_datetime, format_time,formatdate, get_datetime, get_time
 
 def execute(filters=None):
 	if not filters: filters = {}
@@ -16,7 +16,10 @@ def execute(filters=None):
 	data_map = get_data(filters)
 	
 	for d in data_map:
-		data.append([d.name, d.marketplace_courier, d.sales_team, d.pack or 1.0, d.printed, d.transaction_date, d.delivered, d.delivery_date,
+		data.append([d.name, d.marketplace_courier, d.sales_team, d.pack or 1.0, d.printed, getdate(get_datetime(d.transaction_date)), 
+				format_time(get_datetime(d.transaction_date)),
+				d.delivered, getdate(get_datetime(d.delivery_date)) if d.delivery_date else '',
+				format_time(get_datetime(d.delivery_date)) if d.delivery_date else '',
 				d.territory, d.cancelled, d.company, d.scan_print_ref, d.scan_out_ref
 			])
 
@@ -28,8 +31,8 @@ def get_columns(filters):
 
 	columns = [_("AWB No") + ":Link/AWB Invoice:150", _("Courier") + ":Link/Marketplace Courier:120", _("Sales Team") + ":Link/Sales Person:100", 
 			_("Pack") + ":Float:50", _("Printed") + ":Int:80", 
-			_("Date") + ":Datetime:120", _("Delivered") + ":Int:80", 
-			_("Delivery Date") + ":Datetime:120", _("Territory") + ":Link/Territory:100", _("Cancelled") + "::80",
+			_("Date") + ":Date:80", _("Time") + ":Time:80", _("Delivered") + ":Int:80", 
+			_("Delivery Date") + ":Date:100", _("Delivery Time") + ":Time:100", _("Territory") + ":Link/Territory:100", _("Cancelled") + "::80",
 			_("Company") + ":Link/Company:100", _("Scan Print Ref") + ":Link/Scan Print:120",
 			_("Scan Out Ref") + ":Link/Scan Print:120"
 		]

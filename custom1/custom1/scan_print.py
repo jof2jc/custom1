@@ -52,7 +52,7 @@ def awb_invoice(ref, awb_no, courier, sales_team, company, territory, scan_type,
 			doc.delivered = 1
 			doc.delivery_date = now_datetime()
 			doc.scan_out_ref = ref
-			doc.marketplace_courier = courier
+			#doc.marketplace_courier = courier
 			doc.save()
 			frappe.db.commit()
 			return "Scan Out Success"

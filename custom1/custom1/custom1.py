@@ -306,7 +306,8 @@ def make_purchase_order_for_drop_shipment(source_name, target_doc=None, for_supp
 				"contact_mobile",
 				"contact_email",
 				"contact_person",
-				"taxes_and_charges"
+				"taxes_and_charges",
+				"notes"
 			],
 			"validation": {
 				"docstatus": ["=", 1]

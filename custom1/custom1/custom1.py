@@ -588,6 +588,8 @@ def si_before_insert(self, method):
 		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
 		self.posting_date = cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
 
+		if "order_date" in frappe.db.get_table_columns(self.doctype):
+			self.order_date = self.posting_date
 
 	#if "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
 	#	self.import_time = nowtime()	

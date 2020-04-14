@@ -17,7 +17,7 @@ def execute(filters=None):
 	
 	for d in data_map:
 		data.append([d.name, 1, d.qty, d.docstatus, d.order_status, d.customer, d.courier, d.awb_no,
-				d.posting_date, d.creation, d.delivery_date, date_diff(d.delivery_date or nowdate(),d.creation),
+				d.order_date if d.order_date else d.posting_date, d.creation, d.delivery_date, date_diff(d.delivery_date or nowdate(),d.creation),
 				d.territory	
 			])
 
@@ -55,7 +55,7 @@ def get_data(filters):
 	#frappe.msgprint("""select name,customer, awb_no, status, order_status, posting_date, creation, delivery_date, courier 
 	#		from `tabSales Invoice` where is_return=0 {conditions}""".format(conditions=get_conditions(filters)))
 
-	data_map = frappe.db.sql("""select si.name, sum(si_item.qty) as qty, si.customer, si.awb_no, si.docstatus, si.order_status, si.posting_date, 
+	data_map = frappe.db.sql("""select si.name, sum(si_item.qty) as qty, si.customer, si.awb_no, si.docstatus, si.order_status, si.posting_date, si.order_date,
 				date(si.creation) as creation, si.delivery_date, si.courier, si.territory 
 			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent 
 			where si.docstatus <=1 and si.is_return=0 {conditions} 

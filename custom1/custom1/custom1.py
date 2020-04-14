@@ -182,8 +182,6 @@ def si_before_save(self, method):
                self.name = self.no_online_order
 			
 
-			
-
 def si_validate(self, method):
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company"):
@@ -864,14 +862,19 @@ def get_last_rate_by_customer(customer,item_code):
 def get_last_rate_by_customer_so(customer,item_code):
 	return frappe.db.sql('''select si_item.rate_mtr, si_item.rate from `tabSales Order` si join `tabSales Order Item` si_item on si.name=si_item.parent
 		where si.docstatus=1 and customer=%s and item_code=%s
-		and si_item.rate > 0 order by si.transaction_date desc limit 1''', (customer,item_code), as_dict=0)
+		and si_item.rate > 0 order by si.transaction_date, si.name desc limit 1''', (customer,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_last_rate_by_supplier(supplier,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabPurchase Invoice` si join `tabPurchase Invoice Item` si_item on si.name=si_item.parent
-		where si.docstatus=1 and supplier like %s and item_code=%s
+		where si.docstatus=1 and supplier=%s and item_code=%s
 		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + supplier + "%"),item_code), as_dict=0)
 
+@frappe.whitelist()
+def get_last_rate_by_supplier_po(supplier,item_code):
+	return frappe.db.sql('''select si_item.rate_mtr, si_item.rate from `tabPurchase Order` si join `tabPurchase Order Item` si_item on si.name=si_item.parent
+		where si.docstatus=1 and supplier=%s and item_code=%s
+		and si_item.rate > 0 order by si.transaction_date desc, si.name desc limit 1''', (supplier,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_open_customer(customer,name):

@@ -1,23 +1,23 @@
 {
- "content": null, 
- "creation": "2015-10-28 16:27:02.197707", 
- "docstatus": 0, 
- "doctype": "Page", 
- "idx": 0, 
- "modified": "2017-12-21 08:02:39.496415", 
- "modified_by": "Administrator", 
- "module": "Custom1", 
- "name": "welcome-to-erpnext", 
- "owner": "Administrator", 
- "page_name": "welcome-to-erpnext", 
+ "content": null,
+ "creation": "2015-10-28 16:27:02.197707",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2020-04-22 17:55:48.689922",
+ "modified_by": "Administrator",
+ "module": "Custom1",
+ "name": "welcome-to-erpnext",
+ "owner": "Administrator",
+ "page_name": "welcome-to-erpnext",
  "roles": [
   {
    "role": "Administrator"
   }
- ], 
- "script": null, 
- "standard": "Yes", 
- "style": null, 
- "system_page": 1, 
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
  "title": "Welcome to ERPNext"
 }

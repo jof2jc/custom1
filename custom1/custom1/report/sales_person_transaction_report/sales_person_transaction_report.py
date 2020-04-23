@@ -13,16 +13,14 @@ def execute(filters=None):
 	data = [] 
 	
 	if filters.get("group_by")=="Item Code":
-	        for d in entries:
-			data.append([
-				d.name, d.customer, d.territory, d.posting_date, d.item_code, d.item_group, d.brand,
-				d.qty, d.base_net_amount, d.sales_person, d.allocated_percentage, d.contribution_amt
-		])
-        else:
-	        for d in entries:
-			data.append([
-			d.sales_person, d.brand,d.qty, d.amount
-		])
+		for d in entries:
+			data.append([d.name,d.customer,d.territory,d.posting_date,d.item_code,d.item_group,d.brand,
+					d.qty, d.base_net_amount, d.sales_person, d.allocated_percentage, d.contribution_amt
+			])
+	else:
+		for d in entries:
+			data.append([d.sales_person, d.brand,d.qty, d.amount
+			])
 
 	return columns, data
 
@@ -45,7 +43,8 @@ def get_columns(filters):
 def get_entries(filters):
 	date_field = filters["doc_type"] == "Sales Order" and "transaction_date" or "posting_date"
 	conditions, values = get_conditions(filters, date_field)
-        if filters.get("group_by")=="Item Code":
+
+	if filters.get("group_by")=="Item Code":
 		entries = frappe.db.sql("""select dt.name, dt.customer, dt.territory, dt.%s as posting_date,
 			dt_item.item_code, it.item_group, it.brand, dt_item.qty, dt_item.base_net_amount, st.sales_person,
 			st.allocated_percentage, dt_item.base_net_amount*st.allocated_percentage/100 as contribution_amt
@@ -54,12 +53,12 @@ def get_entries(filters):
 			and dt.docstatus = 1 %s order by st.sales_person, dt.name desc""" %
 			(date_field, filters["doc_type"], filters["doc_type"], '%s', conditions),
 			tuple([filters["doc_type"]] + values), as_dict=1)
-        else:
-                entries = frappe.db.sql("""select st.sales_person, it.brand, sum(dt_item.qty) as qty, sum(dt_item.base_net_amount) as amount
+	else:
+		entries = frappe.db.sql("""select st.sales_person, it.brand, sum(dt_item.qty) as qty, sum(dt_item.base_net_amount) as amount
 			from `tab%s` dt, `tab%s Item` dt_item, `tabSales Team` st, `tabItem` it
 			where st.parent = dt.name and dt.name = dt_item.parent and dt_item.item_code = it.item_code and st.parenttype = %s
 			and dt.docstatus = 1 %s group by st.sales_person, it.brand order by st.sales_person""" %
-                        (filters["doc_type"], filters["doc_type"], '%s', conditions),
+			(filters["doc_type"], filters["doc_type"], '%s', conditions),
 			tuple([filters["doc_type"]] + values), as_dict=1)
 
 	return entries

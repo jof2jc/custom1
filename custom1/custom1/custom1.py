@@ -14,11 +14,11 @@ from re import sub
 from decimal import Decimal
 from frappe.model.mapper import get_mapped_doc
 
-def shoutout():
-	print 'yay!'
+#def shoutout():
+#print 'yay!'
 
-def build_my_thing():
-	erpnext.accounts.utils.test = shoutout
+#def build_my_thing():
+#erpnext.accounts.utils.test = shoutout
 
 def print_test():
 	test() 

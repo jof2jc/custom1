@@ -6,7 +6,6 @@ def get_data():
 		
 		{
 			"label": _("Main Reports"),
-			"icon": "icon-table",
 			"items": [
 				{
 					"type": "report",
@@ -80,7 +79,6 @@ def get_data():
 		},
 		{
 			"label": _("Standard Reports"),
-			"icon": "icon-list",
 			"items": [
 				
 				{
@@ -154,7 +152,6 @@ def get_data():
 		},
 		{
 			"label": _("Financial Reports"),
-			"icon": "icon-list",
 			"items": [
 					
 				{
@@ -186,7 +183,6 @@ def get_data():
 		},
 		{
 			"label": _("Analytics"),
-			"icon": "icon-list",
 			"items": [
 					
 				{

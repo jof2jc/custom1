@@ -1,12 +1,9 @@
 {
 	"js/desk1.min.js": [
-		"public/js/frappe/misc/help.js",
-		"public/js/frappe/misc/help_links.js",
 		"public/js/frappe/ui/toolbar/navbar.html",
 		"public/js/frappe/ui/toolbar/search.js",
-		"public/js/frappe/change_log.html",
-		"public/js/frappe/misc/req.js",
-		"public/js/frappe/misc/hide_help_menu.js"
+		"public/js/frappe/change_log.html"
+
 	],
 	"js/form1.min.js": [
 		"public/js/frappe/form/templates/form_sidebar.html",
@@ -18,19 +15,12 @@
 	],
 	 "js/erpnext1.min.js": [
 	        "public/js/conf.js",
-		"public/js/help_links.js",
 		"public/js/serial_no_batch_selector.js",
 		"public/js/customer_quick_entry.js",
 		"public/js/item_quick_entry.js"
     	],
-	"js/report1.min.js": [
-		"public/js/frappe/report/reportview1.js"
-	],
 	"js/zplbrowserprint.min.js": [
 		"public/js/BrowserPrint-2.0.0.75.js"
-	],
-	 "css/desk1.min.css": [
-       		 "public/css/desktop.css"
-    	]
+	]
 
 }

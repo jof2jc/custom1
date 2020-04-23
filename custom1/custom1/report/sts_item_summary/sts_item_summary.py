@@ -123,13 +123,13 @@ def get_price_list():
 		if j.price:
 			rate.setdefault(j.item_code, {}).setdefault("Buying" if j.buying else "Selling", []).append(j.price)
 	item_rate_map = {}
-	print rate
+	#print rate
 
 	for item in rate:
 		for buying_or_selling in rate[item]:
 			item_rate_map.setdefault(item, {}).setdefault(buying_or_selling,
 				", ".join(rate[item].get(buying_or_selling, [])))
-	print item_rate_map
+	#print item_rate_map
 	return item_rate_map
 
 def get_last_purchase_rate():
@@ -176,7 +176,7 @@ def get_last_purchase_rate():
 	for d in frappe.db.sql(query, as_dict=1):
 		item_last_purchase_rate_map.setdefault(d.item_code, d.base_rate)
 
-	print item_last_purchase_rate_map
+	#print item_last_purchase_rate_map
 
 	return item_last_purchase_rate_map
 
@@ -204,7 +204,7 @@ def get_bin_details():
 	for i in bin_details:
 		bin_map.setdefault(i.item_code, i)
 
-	print bin_map
+	#print bin_map
 			
 	return bin_map
 

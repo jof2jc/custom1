@@ -30,15 +30,12 @@ def execute(filters=None):
 	precision = get_currency_precision() or 2
 
 	if "PERDANA DIESEL" or "SERIMPI" in cstr(frappe.db.get_single_value('Global Defaults', 'default_company')):
- 		for item in sorted(item_map):
-			data.append([item.name, item.item_name, item["description"], item.actual_qty, item.stock_uom, item.warehouse, item.location_bin,
-				#avg_sales, int(item.actual_qty/avg_sales) if avg_sales > 0 else 0.0,
-				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0,
-				pl.get(item.name, {}).get("Selling"), item.valuation_rate, #val_rate_map[item]["val_rate"], #flt(val_rate_map.get(item, 0), precision),
-				item.last_purchase_rate or 0.0, #get_last_purchase_rate(item.name) or 0.0, #flt(last_purchase_rate.get(item.name, 0), precision), 
-				item.brand, item.item_group		
-				#pl.get(item, {}).get("Buying"),
-				#flt(bom_rate.get(item, 0), precision)
+		for item in sorted(item_map):
+			data.append([item.name, item.item_name, item.description, item.actual_qty, item.stock_uom, item.warehouse, item.location_bin, 
+				item.avg_qty or 0.0, int(item.actual_qty/item.avg_qty) if item.avg_qty > 0 else 0.0, 
+				pl.get(item.name, {}).get("Selling"), item.valuation_rate,
+				item.last_purchase_rate or 0.0,
+				item.brand, item.item_group
 			])	
 	elif ("Accounts Manager" in frappe.get_roles(frappe.session.user) or "Accounting" in frappe.get_roles(frappe.session.user)):
 		for item in sorted(item_map):
@@ -270,7 +267,7 @@ def get_bin_details():
 	for i in bin_details:
 		bin_map.setdefault(i.item_code, i)
 
-	print bin_map
+	#print bin_map
 			
 	return bin_map
 

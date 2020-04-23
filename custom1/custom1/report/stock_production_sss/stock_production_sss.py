@@ -103,29 +103,29 @@ def get_columns():
 def get_party_details(item_code,voucher_type,voucher_no):
 	party_details = {}
 
- 	params = {
+	params = {
 		'item_code' : item_code,
 		'voucher_no' : voucher_no,
-         	'voucher_type' : voucher_type
+		'voucher_type' : voucher_type
 	}
 
 	if voucher_type == "Sales Invoice":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
+		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
 			from `tabSales Invoice` dt, `tabSales Invoice Item` dt_item
 			where dt.name = dt_item.parent {party_conditions} limit 1""".format(party_conditions=get_party_conditions(item_code, voucher_no)), params, as_dict=1):
 			party_details.setdefault(party.parent, party) 
 	elif voucher_type == "Delivery Note":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
+		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.customer as party, 'Customer' as party_type, rate as outgoing_rate
 			from `tabDelivery Note` dt, `tabDelivery Note Item` dt_item
 			where dt.name = dt_item.parent {party_conditions} limit 1""".format(party_conditions=get_party_conditions(item_code, voucher_no)), params, as_dict=1):
 			party_details.setdefault(party.parent, party)
 	elif voucher_type == "Purchase Invoice":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.supplier as party, 'Supplier' as party_type, 0.0 as outgoing_rate
+		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.supplier as party, 'Supplier' as party_type, 0.0 as outgoing_rate
 			from `tabPurchase Invoice` dt, `tabPurchase Invoice Item` dt_item
 			where dt.name = dt_item.parent and dt_item.parent = %(voucher_no)s and dt_item.item_code = %(item_code)s""", params, as_dict=1):
 			party_details.setdefault(party.parent, party)
 	elif voucher_type == "Purchase Receipt":
-       		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.supplier as party, 'Supplier' as party_type, 0.0 as outgoing_rate
+		for party in frappe.db.sql("""select dt_item.parent, dt_item.item_code, dt.supplier as party, 'Supplier' as party_type, 0.0 as outgoing_rate
 			from `tabPurchase Receipt` dt, `tabPurchase Receipt Item` dt_item
 			where dt.name = dt_item.parent and dt_item.parent = %(voucher_no)s and dt_item.item_code = %(item_code)s""", params, as_dict=1):
 			party_details.setdefault(party.parent, party)

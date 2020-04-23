@@ -33,7 +33,7 @@ def execute(filters=None):
 						(qty_dict.val_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0),
 						company
 					])
-        else:
+	else:
 		iwb_map = get_item_warehouse_map_bybrand(filters)
 		for company in sorted(iwb_map):
 			for brand in sorted(iwb_map[company]):
@@ -82,14 +82,14 @@ def get_conditions(filters):
 
 	if filters.get("item_group"):
 		conditions += " and it.item_group = '%s'" % filters["item_group"]
-  
-        if filters.get("company"):
+
+	if filters.get("company"):
 		conditions += " and sle.company = '%s'" % filters["company"]
 
-        if filters.get("warehouse"):
+	if filters.get("warehouse"):
 		conditions += " and sle.warehouse = '%s'" % filters["warehouse"]
 
-        if filters.get("brand"):
+	if filters.get("brand"):
 		conditions += " and it.brand = '%s'" % filters["brand"]
 
 
@@ -122,10 +122,10 @@ def get_item_warehouse_map(filters):
 			}))
 		qty_dict = iwb_map[d.company][d.item_code][d.warehouse]
 
- 		qty_dict.item_name = d.item_name
+		qty_dict.item_name = d.item_name
 		qty_dict.item_group = d.item_group
- 		qty_dict.brand = d.brand
-		qty_dict.description = d.description	
+		qty_dict.brand = d.brand
+		qty_dict.description = d.description
 		qty_dict.stock_uom = d.stock_uom
 
 		if d.voucher_type == "Stock Reconciliation":
@@ -167,8 +167,7 @@ def get_item_warehouse_map_bybrand(filters):
 			}))
 		qty_dict = iwb_map[d.company][d.brand][d.stock_uom][d.warehouse]
 
-
- 		qty_dict.brand = d.brand
+		qty_dict.brand = d.brand
 		qty_dict.stock_uom = d.stock_uom
 
 		if d.voucher_type == "Stock Reconciliation":

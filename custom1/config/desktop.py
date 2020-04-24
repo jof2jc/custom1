@@ -12,6 +12,15 @@ def get_data():
 			"icon": "octicon octicon-repo",
 			"type": "module",
 			"description": "Custom1"
+		},
+		{
+			"module_name": "Marketplace Flow",
+			"category": "Modules",
+			"label": _("Marketplace Flow"),
+			"color": "#3498db",
+			"icon": "fa fa-truck",
+			"type": "module",
+			"description": "Operation workflow from online order to pick-pack-delivery"
 		}
                 
 	]

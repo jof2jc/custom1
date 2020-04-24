@@ -21,7 +21,7 @@ class IMEIStockOpname(Document):
 		#for d in self.items:
 		serial_nos = cstr(self.imei).strip().replace(',', '\n').split('\n') #list(cstr(self.imei).strip().replace(',', '\n').split('\n'))
 
-		print serial_nos
+		#print serial_nos
 
 		self.set('invalid_imei', {}) #clear child table
 		

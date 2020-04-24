@@ -10,7 +10,16 @@ app_color = "grey"
 app_email = "jof2jc@gmail.com"
 app_version = "0.0.1"
 
+fixtures = [    
+		{
+        		"doctype": "Property Setter",
+		        "filters": {
+        				"doc_type": ["in", ["Item"]]
+        		}
+    		}
+]
 
+'''
 fixtures = [    
 		{
         		"doctype": "Custom Field",
@@ -20,12 +29,25 @@ fixtures = [
 ]
 
 '''
+'''
 fixtures = [    
 		{
         		"doctype": "Property Setter",
 		        "filters": {
-        				"doc_type": ["in", ["Sales Order","Purchase Order","Purchase Receipt","Purchase Invoice","Delivery Note","Sales Invoice","Quotation", "Quotation Item","Payment Entry Reference","Data Import","Stock Entry","Stock Entry Detail","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order","Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item","Purchase Receipt Item","Purchase Invoice Item"]],
-				        "field_name": ["in", ["payment_schedule_section","item_code","shipping_rule","bom","serial_no_batch","serial_no","batch_no","project","discount_amount","project","reference_doctype","submit_after_import","overwrite","only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests","is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset","foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section","raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details"]]
+        				"doc_type": ["in", ["Sales Order","Purchase Order","Purchase Receipt","Purchase Invoice","Delivery Note",
+						"Sales Invoice","Quotation", "Quotation Item","Payment Entry Reference","Data Import","Stock Entry",
+						"Stock Entry Detail","Sales Invoice","Purchase Invoice","Sales Order","Delivery Note","Purchase Order",
+						"Item","Stock Settings","Sales Order Item","Delivery Note Item","Sales Invoice Item","Purchase Order Item",
+						"Purchase Receipt Item","Purchase Invoice Item"
+					]],
+				        "field_name": ["in", ["payment_schedule_section","item_code","shipping_rule","bom","serial_no_batch","serial_no",
+						"batch_no","project","discount_amount","project","reference_doctype","submit_after_import","overwrite",
+						"only_update","skip_errors","ignore_encoding_errors","no_email","get_items_from_open_material_requests",
+						"is_subcontracted","pos_profile","source_warehouse_address","target_warehouse_address","is_fixed_asset",
+						"foreign_trade_Details","tolerance","is_item_from_hub","customer_po_details","subscription_section",
+						"raw_materials_supplied","is_item_from_hub","hub_publishing_sb","show_barcode_field","item_weight_details",
+						"coupon_code","transporter_info","installed_qty","sales_team_section_break","taxes_section","to_warehouse"
+					]]
         		}
     		}
 ]
@@ -94,7 +116,7 @@ website_context = {
 	"splash_image": "/assets/custom1/images/splash.png"
 }
 
-#doctype_list_js = {"Sales Invoice":"public/js/sales_invoice_list.js"}
+doctype_list_js = {"Data Import":"public/js/frappe/list/data_import_list.js"}
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"

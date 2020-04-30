@@ -7,7 +7,7 @@ def get_data():
 		{
 			"module_name": "Custom1",
 			"category": "Modules",
-			"label": _("Custom1"),
+			"label": _("My Reports"),
 			"color": "#3498db",
 			"icon": "octicon octicon-repo",
 			"type": "module",
@@ -21,6 +21,13 @@ def get_data():
 			"icon": "fa fa-truck",
 			"type": "module",
 			"description": "Operation workflow from online order to pick-pack-delivery"
-		}
-                
+		},
+		{
+			"module_name": "My System Settings",
+			"category": "Modules",
+			"label": _("My System Settings"),
+			"color": "#bdc3c7",
+			"icon": "octicon octicon-settings",
+			"type": "module"
+		},      
 	]

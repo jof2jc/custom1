@@ -559,6 +559,20 @@ def si_before_insert(self, method):
 	same_invoice = ""
 	cost_center = ""
 
+	# make sure no double order_no
+	if self.naming_series and len(cstr(self.naming_series)) >= 10:
+		no_online_order = self.naming_series.strip()
+		self.no_online_order = cstr(no_online_order)
+
+		if (self.is_return):
+			self.name = "R-" + self.no_online_order
+		else:
+			self.name = cstr(self.no_online_order)
+
+		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
+		if self.no_online_order and same_invoice:
+			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
+
 	#make sure only import order yg sudah diproses
 	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY TO SHIP","READY_TO_SHIP","DIPROSES PELAPAK"]
 
@@ -584,30 +598,16 @@ def si_before_insert(self, method):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
 		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
-		self.posting_date = cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
+		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
 
 		if "order_date" in frappe.db.get_table_columns(self.doctype):
-			self.order_date = self.posting_date
+			self.order_date = cstr(getdate(cstr(self.posting_date))) #self.posting_date
 
 	#if "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
 	#	self.import_time = nowtime()	
 
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
-
-	if self.naming_series and len(cstr(self.naming_series)) >= 10:
-		no_online_order = self.naming_series.strip()
-		self.no_online_order = cstr(no_online_order)
-
-		if (self.is_return):
-			self.name = "R-" + self.no_online_order
-		else:
-			self.name = cstr(self.no_online_order)
-
-		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
-		if self.no_online_order and same_invoice:
-			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
-
 
 	if not self.selling_price_list:
 		self.selling_price_list = frappe.db.get_value("Customer", {"name":self.customer}, "default_price_list") #"Price 1"
@@ -1081,7 +1081,7 @@ def update_default_fiscal_year():
 
 
 def delete_old_docs_daily1():
-	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 and folder in ('Home/Attachments') 
+	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 
 		and file_name not like '%into-the-dawn%' and file_name not like '%.png%' and file_name not like '%Generate_Template%' 
 		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
 

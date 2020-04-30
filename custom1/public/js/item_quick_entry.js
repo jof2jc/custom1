@@ -29,6 +29,8 @@ frappe.ui.form.ItemQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
 		this.toggle_manufacturer_fields();
 		this.dialog.get_field("item_template").df.hidden = 1;
 		this.dialog.get_field("item_template").refresh();
+		this.dialog.get_field("create_variant").df.hidden = 1;
+		this.dialog.get_field("create_variant").refresh();
 	},
 
 	register_primary_action: function() {
@@ -173,11 +175,11 @@ frappe.ui.form.ItemQuickEntryForm = frappe.ui.form.QuickEntryForm.extend({
 		var for_variant = this.dialog.get_value('create_variant');
 
 		// setup template field, seen and mandatory if variant
-		let template_field = this.dialog.get_field("item_template");
+		/* let template_field = this.dialog.get_field("item_template");
 		template_field.df.reqd = for_variant;
 		template_field.set_value('');
 		template_field.df.hidden = !for_variant;
-		template_field.refresh();
+		template_field.refresh(); */
 
 		// hide properties for variant
 		['item_code', 'item_name', 'item_group', 'stock_uom'].forEach((d) => {

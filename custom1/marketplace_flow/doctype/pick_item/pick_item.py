@@ -50,7 +50,8 @@ class PickItem(Document):
 
 @frappe.whitelist()
 def update_picked_item(awb_order_no, serial_batch_no, item_code):
-	message=[0,0,0,""]
+	message=[0,0,0,"",""]
+	is_item_empty=True
 
 	si = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=0 and is_return=0 and (name=%s or awb_no=%s) limit 1''', (awb_order_no,awb_order_no),as_dict=0) or ""
 
@@ -58,13 +59,24 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code):
 	if si:
 		doc = frappe.get_doc("Sales Invoice",cstr(si[0][0]))
 
+		''' get item_code if user scan item barcode '''
+		sku = frappe.db.sql('''select it.name from `tabItem` it join `tabItem Barcode` bar on it.name=bar.parent
+			where it.disabled=0 and it.is_stock_item=1 and bar.barcode=%s limit 1''', (item_code), as_dict=0)
+		if sku:
+			item_code =  cstr(sku[0][0]) or item_code or ""
+			
 		for d in doc.items:
 			if d.item_code == item_code:
+				is_item_empty = False
+				message[4] = d.item_code
+
 				if serial_batch_no:
 					if frappe.db.get_value("Item", item_code, "has_serial_no"):
 						d.serial_no = cstr(d.serial_no) + serial_batch_no + "\n"
+
 					elif frappe.db.get_value("Item", item_code, "has_batch_no"):
-						d.batch_no = serial_batch_no
+						if not d.batch_no:
+							d.batch_no = serial_batch_no.strip()
 
 				if d.qty > d.picked_qty:
 					message[0]=d.qty
@@ -72,13 +84,17 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code):
 					d.picked_qty += 1
 
 					message[1] = d.picked_qty
-			
+	
 					if d.picked_qty == d.qty:
 						d.is_picked = 1
 						message[2] = d.is_picked
 
-					#doc.save()
-					#frappe.db.commit()
+					if not d.warehouse:
+						d.warehouse = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
+							frappe.db.get_single_value('Stock Settings', 'default_warehouse') or ""
+
+					doc.save()
+					frappe.db.commit()
 					
 					if d.picked_qty == d.qty:
 						message[3] = "Completed"
@@ -89,7 +105,10 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code):
 					message[3] = "Error: Over Picked Qty"
 					return message
 
+		if is_item_empty:
+			message[3] = "Error: Item Code / SKU Not Found"
+			return message
 	else:
-		message[3] = "Error: Order / AWB Not Found"
+		message[3] = "Error: Order No / AWB Not Found"
 		return message
 	

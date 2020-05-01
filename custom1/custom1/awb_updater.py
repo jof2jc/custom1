@@ -108,6 +108,13 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 						})
 
 			elif not mydict.awb_no:
+				error_flag = True
+
+				if skip_errors:
+					data_with_error.append(mydict)
+				else:
+					rollback_flag = True
+
 				log(**{"row": idx, "title": 'AWB not found in the Print Slip',
 					"link": "", "message": 'Order "%s". Please check Print-Slip.pdf' % (mydict.order_no), "indicator": "orange"
 				})
@@ -282,13 +289,15 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 
 		f.close()
 
-	else:
+	elif len(data) < 1:
 		error_flag = True
-		data_import_doc.skip_errors = 0
+		#data_import_doc.skip_errors = 0
+
+		total = 100
 		import_log=[]
 		log(**{
 			"row": "1",
-			"title": "Error file type or name",
+			"title": "Error file type or name. Not found any records in the attached file",
 			"message": "Please check file type is pdf or html, also file_name must includes marketplace name like Tokopedia, Shopee, Bukalapak etc",
 			"indicator": "red",
 			"link":""
@@ -313,9 +322,9 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 		if data_import_doc.import_status in ["Successful", "Partially Successful"]:
 			data_import_doc.submit()
 			publish_progress(100, True)
-			frappe.db.commit()
 		else:
 			publish_progress(0, True)
+
+		frappe.db.commit()
 		
-	else:
-		return log_message
+	return log_message

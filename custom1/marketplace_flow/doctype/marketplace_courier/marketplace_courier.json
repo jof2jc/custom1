@@ -14,6 +14,7 @@
   "post_to_shipping_account",
   "sc_02",
   "letter_head",
+  "print_label_logo",
   "cb_desc",
   "description",
   "sc_charges",
@@ -41,35 +42,17 @@
   },
   {
    "bold": 1,
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "in_global_search": 1,
-   "label": "Description"
-  },
-  {
-   "bold": 1,
    "default": "Regular",
    "fieldname": "courier_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Courier Type",
    "options": "\nRegular\nSame Day",
    "reqd": 1
   },
   {
-   "bold": 1,
-   "fieldname": "letter_head",
-   "fieldtype": "Link",
-   "label": "Letter Head",
-   "options": "Letter Head"
-  },
-  {
    "fieldname": "cd_01",
    "fieldtype": "Column Break"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "sc_02",
-   "fieldtype": "Section Break"
   },
   {
    "bold": 1,
@@ -87,6 +70,30 @@
    "label": "Post Shipping Fee To Shipping Account"
   },
   {
+   "collapsible": 1,
+   "fieldname": "sc_02",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Letter Head",
+   "options": "Letter Head"
+  },
+  {
+   "fieldname": "cb_desc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_global_search": 1,
+   "label": "Description"
+  },
+  {
    "description": "One of following conditions must be specified to apply charges",
    "fieldname": "sc_charges",
    "fieldtype": "Section Break"
@@ -97,24 +104,25 @@
    "label": "Minimum total amount to apply charges"
   },
   {
-   "fieldname": "charges",
-   "fieldtype": "Table",
-   "options": "Sales Taxes and Charges"
-  },
-  {
    "description": "(Factor * shipping fee) &lt; total",
    "fieldname": "multiply_factor",
    "fieldtype": "Float",
    "label": "Shipping fee multiply factor to apply charges"
   },
   {
-   "fieldname": "cb_desc",
-   "fieldtype": "Column Break"
+   "fieldname": "charges",
+   "fieldtype": "Table",
+   "options": "Sales Taxes and Charges"
+  },
+  {
+   "fieldname": "print_label_logo",
+   "fieldtype": "Attach Image",
+   "label": "Print Label Logo"
   }
  ],
- "modified": "2020-05-14 07:45:03.282741",
+ "modified": "2020-05-15 07:19:12.557218",
  "modified_by": "Administrator",
- "module": "Custom1",
+ "module": "Marketplace Flow",
  "name": "Marketplace Courier",
  "owner": "Administrator",
  "permissions": [

@@ -1,0 +1,191 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2020-05-06 10:40:42.285189",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sc_01",
+  "title",
+  "naming_series",
+  "pickup_session",
+  "cb_9",
+  "date",
+  "sc_02",
+  "marketplace_courier",
+  "courier_type",
+  "scan_data",
+  "order_status",
+  "message",
+  "cb_01",
+  "courier_name",
+  "label_list",
+  "total_package",
+  "sc_remarks",
+  "remarks",
+  "cb_03",
+  "attach_image",
+  "picker_person_name",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "sc_01",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "pickup_session",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Pickup Session",
+   "options": "1\n2\n3\n4\n5",
+   "reqd": 1
+  },
+  {
+   "fieldname": "marketplace_courier",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Marketplace Courier",
+   "options": "Marketplace Courier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "courier_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Courier Type",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "scan_data",
+   "fieldtype": "Data",
+   "label": "Scan Print Label"
+  },
+  {
+   "fieldname": "cb_01",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "courier_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Courier Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "label_list",
+   "fieldtype": "Small Text",
+   "label": "Label List",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_package",
+   "fieldtype": "Float",
+   "label": "Total Package",
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "OUTR/.DD.-.MM.-.YYYY./.###",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sc_02",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "{marketplace_courier}",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Marketplace Outbond Receipt",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_status",
+   "fieldtype": "Data",
+   "label": "Order Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attach_image",
+   "fieldtype": "Attach Image",
+   "label": "Attach Image"
+  },
+  {
+   "fieldname": "sc_remarks",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Data",
+   "label": "Message",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_03",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "picker_person_name",
+   "fieldtype": "Data",
+   "label": "Picker Person Name"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-05-07 11:27:24.097874",
+ "modified_by": "Administrator",
+ "module": "Marketplace Flow",
+ "name": "Marketplace Outbond Receipt",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

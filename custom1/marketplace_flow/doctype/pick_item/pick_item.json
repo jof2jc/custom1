@@ -12,6 +12,8 @@
   "sc_scan_items",
   "scan_awb_order",
   "scan_serial_batch",
+  "image",
+  "image_view",
   "cb_02",
   "item_code",
   "item_name",
@@ -101,10 +103,22 @@
    "fieldname": "btn_scan_new",
    "fieldtype": "Button",
    "label": "Scan New Order / AWB"
+  },
+  {
+   "fieldname": "image_view",
+   "fieldtype": "Image",
+   "label": "Image View",
+   "options": "image"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
   }
  ],
  "issingle": 1,
- "modified": "2020-04-29 16:53:35.358953",
+ "modified": "2020-05-07 09:29:06.469894",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Pick Item",
@@ -114,20 +128,6 @@
    "create": 1,
    "read": 1,
    "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "read": 1,
-   "role": "Accounts User",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "read": 1,
-   "role": "Material User",
    "share": 1,
    "write": 1
   }

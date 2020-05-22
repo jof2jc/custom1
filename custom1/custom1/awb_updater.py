@@ -74,13 +74,15 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 			if frappe.db.get_value(data_import_doc.reference_doctype, {"name":mydict.order_no,"is_return":0},"name"):
 				doc = frappe.get_doc(data_import_doc.reference_doctype, {"name":mydict.order_no,"is_return":0})
 			if doc:
-				if mydict.awb_no[-8:].isdigit() or "TJNE-" in mydict.awb_no: #check awb format is correct, last 8 digits must be number
+				if mydict.awb_no[-8:].isdigit() or len(mydict.awb_no.split("-")[0]) == 4: #check awb format is correct, last 8 digits must be number
 					if not doc.awb_no and mydict.awb_no and doc.docstatus == 0:
 						doc.awb_no = mydict.awb_no
 
 						log(**{"row": idx, "title": 'Updated AWB "%s" for "%s"' % (mydict.awb_no, as_link(doc.doctype, doc.name)),
 							"link": "", "message": 'Document successfully updated', "indicator": "green"
 						})
+						if mydict.berat and not doc.package_weight: 
+							doc.package_weight = mydict.berat
 						doc.save()
 
 					elif doc.awb_no and doc.awb_no != mydict.awb_no and doc.docstatus == 0:
@@ -88,12 +90,18 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 							"link": "", "message": 'Different AWB "%s" found. Document successfully updated' % (doc.awb_no), "indicator": "blue"
 						})
 						doc.awb_no = mydict.awb_no
+						if mydict.berat and not doc.package_weight: 
+							doc.package_weight = mydict.berat
 						doc.save()
 
 					elif doc.awb_no and doc.docstatus == 0:
 						log(**{"row": idx, "title": 'AWB "%s" was updated for "%s"' % (mydict.awb_no, as_link(doc.doctype, doc.name)),
 							"link": "", "message": 'Ignored', "indicator": "orange"
 						})
+						if mydict.berat and not doc.package_weight: 
+							doc.package_weight = mydict.berat
+							doc.save()
+
 					elif doc.docstatus == 1:
 						log(**{"row": idx, "title": 'Order "%s" is delivered' % (mydict.order_no),
 							"link": "", "message": 'AWB "%s" not updated. Ignored' % (mydict.awb_no), "indicator": "orange"
@@ -103,8 +111,15 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 							"link": "", "message": 'AWB "%s" not updated. Ignored' % (mydict.awb_no), "indicator": "orange"
 						})
 				else:
+					error_flag = True
+
+					if skip_errors:
+						data_with_error.append(mydict)
+					else:
+						rollback_flag = True
+
 					log(**{"row": idx, "title": 'Wrong AWB Format "%s"' % (mydict.awb_no),
-							"link": "", "message": 'Order "%s"' % (mydict.order_no), "indicator": "orange"
+							"link": "", "message": 'Order "%s"' % (mydict.order_no), "indicator": "red"
 						})
 
 			elif not mydict.awb_no:
@@ -116,7 +131,7 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 					rollback_flag = True
 
 				log(**{"row": idx, "title": 'AWB not found in the Print Slip',
-					"link": "", "message": 'Order "%s". Please check Print-Slip.pdf' % (mydict.order_no), "indicator": "orange"
+					"link": "", "message": 'Order "%s". Please check Print-Slip.pdf' % (mydict.order_no), "indicator": "red"
 				})
 			else:
 				log(**{"row": idx, "title": 'Order "%s" not found' % (mydict.order_no),
@@ -193,7 +208,7 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 					elif len(mydict)==1 and "courier" not in mydict and a:
 						mydict["courier"]=a
 					elif len(mydict)==2 and "berat" not in mydict and a:
-						mydict["berat"]=a
+						mydict["berat"]=a.split(":")[1][:-2]
 					elif len(mydict)==3 and "ongkir" not in mydict and a:
 						mydict["ongkir"]=a	
 					elif len(mydict)==4 and "awb_no" not in mydict and a:
@@ -231,7 +246,7 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 						elif len(mydict)==3 and "courier" not in mydict and a and n==4:
 							mydict["courier"]=a
 						elif len(mydict)==4 and "berat" not in mydict and a and n==5:
-							mydict["berat"]=a
+							mydict["berat"]=flt(a.split(" ")[0])/1000.0 #convert from gr to kg
 
 							if len(mydict) == 5:
 								update_awb_dict(mydict, data_import_doc.skip_errors, len(data)+1)

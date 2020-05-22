@@ -105,6 +105,11 @@ app_include_css = [
 	"assets/css/desk1.min.css"
 ]
 
+doctype_list_js = {
+	"Sales Invoice": "public/js/erpnext/list/sales_invoice_list.js",
+	"Data Import":"public/js/frappe/list/data_import_list.js"
+}
+
 #after_migrate = ["custom1.custom1.custom1.reset_default_icons"]
 
 # include js, css files in header of desk.html
@@ -116,7 +121,7 @@ website_context = {
 	"splash_image": "/assets/custom1/images/splash.png"
 }
 
-doctype_list_js = {"Data Import":"public/js/frappe/list/data_import_list.js"}
+
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"
@@ -197,15 +202,21 @@ doc_events = {
     "Sales Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_submit": "custom1.custom1.makko.update_linked_docs",
+	"on_submit": "custom1.marketplace_flow.marketplace_flow.update_marketplace_return_on_sales_invoice_submit_cancel",
+	"before_cancel": "custom1.marketplace_flow.marketplace_flow.update_marketplace_return_on_sales_invoice_submit_cancel",
 	"before_submit": "custom1.custom1.custom1.si_before_submit",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
+	#"before_cancel": "custom1.custom1.custom1.si_before_cancel",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",
-	"before_print": "custom1.custom1.custom1.update_print_counter1"
+	"before_print": "custom1.custom1.custom1.update_print_counter1",
+	"on_update": "custom1.custom1.custom1.si_after_save"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
+	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
+	"on_submit": "custom1.marketplace_flow.marketplace_flow.update_marketplace_return_on_purchase_invoice_submit_cancel",
+	"before_cancel": "custom1.marketplace_flow.marketplace_flow.update_marketplace_return_on_purchase_invoice_submit_cancel"
     },
     "Payment Entry": {
         "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",

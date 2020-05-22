@@ -4,7 +4,7 @@ from frappe import _
 def get_data():
 	return [
 		{
-			"label": _("Item Operation"),
+			"label": _("Transaction"),
 			"icon": "fa fa-star",
 			"items": [
 				{
@@ -14,40 +14,103 @@ def get_data():
 					"onboard": 1
 				},
 				{
-					"type": "report",
-					"name": "Order Invoice Sheet",
-					"doctype": "Sales Invoice",
+					"type": "doctype",
+					"name": "Pick Item",
 					"onboard": 1
 				},
 				{
 					"type": "doctype",
-					"name": "Pick Item",
-					"label": _("Pick Item to pack"),
-					"onboard": 1,
-					"description": _("Pick Item per order")
+					"name": "Pack Item",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Marketplace Outbond Receipt",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Marketplace Return",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Stock Entry",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Payment Entry",
+					"onboard": 1
 				},
 				{
 					"type": "doctype",
 					"name": "Pick and Pack",
 					"label": _("Scan-out To Deliver Items"),
-					"onboard": 1
+					"hidden": 1
 				}
 			]
 		},
 		{
-			"label": _("Stock"),
+			"label": _("Setup"),
 			"icon": "fa fa-star",
 			"items": [
 				{
 					"type": "doctype",
-					"name": "BOM"
+					"name": "Item",
+					"label": _("Item List"),
+					"onboard": 1
 				},
 				{
 					"type": "doctype",
-					"name": "Item",
-					"label": _("Item List"),
+					"name": "Item Group",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Customer",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Supplier",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Marketplace Courier",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Serial No",
 					"onboard": 1,
-				}
+					"dependencies": ["Item"],
+				},
+				{
+					"type": "doctype",
+					"name": "Batch",
+					"onboard": 1,
+					"dependencies": ["Item"],
+				},
+			]
+		},
+		{
+			"label": _("Reports"),
+			"icon": "fa fa-star",
+			"items": [
+				{
+					"type": "report",
+					"name": "Fulfillment Sheet",
+					"doctype": "Sales Invoice",
+					"onboard": 1
+				},
+				{
+					"type": "report",
+					"name": "Marketplace Return Sheet",
+					"doctype": "Marketplace Return",
+					"onboard": 1
+				},
 			]
 		}
 	]

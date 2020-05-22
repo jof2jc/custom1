@@ -1,0 +1,75 @@
+<style>
+	table, th, td {
+ 		border: 1px solid;
+		padding: 5px;
+		font-size:11px;
+		vertical-align:top;
+	}
+	table {
+		width: 100%;              
+	}
+	th.text-center {
+		align: center;              
+	}
+</style>
+
+		<table>
+				<tr>
+					<th class="text-center"> {{ __("Row") }} </th>
+					<th class="text-center"> {{ __("Order No") }} </th>
+					<th> {{ __("Order Date") }} </th>
+					<th> {{ __("AWB No") }} </th>
+					<th> {{ __("Order Status") }} </th>
+					<th> {{ __("Total Weight (gr)") }} </th>
+					<th> {{ __("Is Picked") }} </th>
+					<th> {{ __("Item Code / SKU") }} </th>
+					<th> {{ __("Item Name") }} </th>
+					<th> {{ __("Image View") }} </th>
+					<th> {{ __("Qty") }} </th>
+				</tr>
+
+			{% for row in data %}
+				{% if (row) %}
+				<tr>
+					<td style="width:3%">
+						<span>{{ row.row }} </span>
+					</td>
+					<td style="width:10%">
+						<span>{{ row.order_no }} </span>
+					</td>
+					<td style="width:5%">
+						<span>{{ row.order_date }} </span>
+					</td>
+					<td style="width:10%">
+						<span>{{ row.awb_no }} </span>
+					</td>
+					<td style="width:7%">
+						<span>{{ row.order_status }} </span>
+					</td>
+					<td style="width:5%">
+						<span>{{ row.package_weight }} </span>
+					</td>
+					<td style="width:5%">
+						<span>{{ row.is_picked }} </span>
+					</td>
+					<td style="width:10%">
+						<span>{{ row.item_code }} </span>
+					</td>
+					<td style="width:20%">
+						<span>{{ row.item_name }} </span>
+					</td>
+					<td style="width:20%">
+						{% if row.image %}
+							<img height="200" src={{ '\"' + row.image + '\"' }} width="200">
+						{% else %}
+							{{ __("No Image") }}
+						{% endif %}
+					</td>
+					<td style="width:5%">
+						<span>{{ row.qty }} </span>
+					</td>
+				</tr>
+				{% endif %}
+			{% endfor %}
+		</table>
+	

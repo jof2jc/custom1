@@ -18,7 +18,7 @@ frappe.ui.form.MultiSelectDialog = Class.extend({
 	make: function() {
 		let me = this;
 
-		this.page_length = 100;
+		this.page_length = 20;
 		this.start = 0;
 
 		let fields = [

@@ -174,12 +174,39 @@ def si_on_change(self, method):
 	if invoice_no:
 		self.name = cstr(invoice_no[0][0])
 
-def si_before_save(self, method):
-	#frappe.msgprint(cstr(self.name))
-	return
+def si_after_save(self, method):
+	#controller to validate user when change order_status manually
+	meta = frappe.get_meta(self.doctype)
+	if meta.has_field("awb_no") and meta.has_field("order_status"):
+		if not frappe.db.exists(self.doctype,{"name":self.name, "docstatus":0, "is_return":0}): return
+
+		if self.order_status == "To Pack": 
+			if frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
+				self.db_set("order_status","To Pick")
+				frappe.msgprint(_("Not picked items found. Changed order status = To Pick"))
 	
-	if self.no_online_order and len(cstr(self.no_online_order)) > 10 and self.name != self.no_online_order:	
-               self.name = self.no_online_order
+		elif self.order_status == "Completed": 
+			if self.docstatus != 1:
+				frappe.throw(_("Please make sure Pick and Pack is done properly. Cannot change to Completed manually"))
+
+		elif self.order_status == "Cancelled": 
+			frappe.msgprint(_("Warning. If you change order status to Cancelled then you will not be able to continue"))
+		
+		elif self.no_online_order and self.awb_no and not self.order_status: 
+			frappe.throw(_("Order Status cannot be blank"))
+
+		#doc = frappe.get_doc("Sales Invoice", self.name)
+		for d in self.items:
+			if d.is_picked and d.qty != d.picked_qty and d.qty != 0:
+				d.is_picked=0
+				frappe.throw(_("Please make sure Picked Qty is equal with Order Qty before change Is_Picked. Item: {0}".format(d.item_code)))
+
+		if self.order_status == "To Pick": 
+			if not frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
+				self.db_set("order_status","To Pack")
+				frappe.msgprint(_("All items are picked already. Changed order status = To Pack"))
+
+
 			
 
 def si_validate(self, method):
@@ -187,45 +214,38 @@ def si_validate(self, method):
 	if "is_online_shop" in frappe.db.get_table_columns("Company"):
 		is_online_shop = frappe.db.get_value("Company", self.company, "is_online_shop")
 
-	if not is_online_shop and self.company not in ("SILVER PHONE", "AN Electronic", "TOKO BELAKANG", "NEXTECH","PT. TRIGUNA JAYA SENTOSA", "HANIPET KOTEGA","BOMBER STORE","HIHI STORE","CENTRA ONLINE"):
-		return
+	if not is_online_shop: return
 
-	if self.no_online_order:
-		invoice_no = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
+	meta = frappe.get_meta(self.doctype)
+	if meta.has_field("no_online_order"):
+		if self.no_online_order:
+			invoice_no = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 	
-		if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10 and not self.is_return:
-			frappe.throw(_("Same Invoice No: {0} found").format(self.no_online_order))
+			if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10 and not self.is_return:
+				frappe.throw(_("Same Invoice No: {0} found").format(self.no_online_order))
 
-		'''Generate random AWB NO if not specified for barcode purpose'''
-		if not self.awb_no and "generate_awb_barcode" in frappe.db.get_table_columns("Company") and not self.is_return:
-			if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
-				temp = frappe.generate_hash()[:12].upper()
-				self.awb_no = temp #+ "-" + self.no_online_order[-5:]
+			'''Generate random AWB NO if not specified for barcode purpose'''
+			if not self.awb_no and "generate_awb_barcode" in frappe.db.get_table_columns("Company") and not self.is_return:
+				if frappe.db.get_value("Company", {"name":self.company}, "generate_awb_barcode"):
+					temp = frappe.generate_hash()[:12].upper()
+					self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 
-		'''
+
+	if meta.has_field("awb_no") and meta.has_field("order_status"):
+		if self.is_return: 
+			self.order_status = ""
+
+		else: calculate_shipping_internal_charges(self, self.base_total)
+
+	meta = frappe.get_meta("Sales Invoice Item")
+
+	if meta.has_field("marketplace_return") and self.is_return:
 		for d in self.items:
-			""" Get marketplace fee for official store """
-			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or ""
-			
-			if item_group and frappe.db.table_exists("Marketplace Fees"):
-				mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":item_group, "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
-				if not mp_fee:
-					mp_fee = frappe.db.get_value("Marketplace Fees", {"parent":"Products", "marketplace_store_name": self.customer}, ["marketplace_fee_percentage","max_fee_amount"])
-				if mp_fee:
-					if not d.discount_percentage:
-						d.discount_percentage = mp_fee[0] or 0.0
+			if not d.marketplace_return:
+				frappe.throw(_("Row {0}.Sales Return must be created from Marketplace Return".format(d.idx)))
 
-				if flt(d.discount_percentage) != 0.0:
-					if not d.price_list_rate:
-						d.price_list_rate = d.rate
-
-				if d.price_list_rate:
-					if ((flt(d.discount_percentage)/100.0 * flt(d.price_list_rate)) > flt(mp_fee[1])) and flt(mp_fee[1]) > 0:
-						d.rate = flt(d.price_list_rate) - flt(mp_fee[1])
-					else:
-						d.rate = flt(d.price_list_rate) * (100.0 - d.discount_percentage)/100.0
-					#d.amount = flt(d.rate) * flt(d.qty)
-		'''
+			elif [mr for mr in frappe.get_list("Marketplace Return Item", fields="parent", filters = [["parent","=",d.marketplace_return], ["sales_invoice","=",d.item_invoice], ["item_code","=",d.item_code], ["name","=",d.ref_item_name], ["qty","!=",abs(d.qty)]]) if mr]:
+				frappe.throw(_("Row {0}. Qty is different from Marketplace Return Qty: {1}".format(d.idx, d.marketplace_return)))
 
 def si_before_submit(self, method):
 	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
@@ -238,6 +258,28 @@ def si_before_submit(self, method):
 		if max_discount_amount != 0.0 and flt(self.discount_amount) > max_discount_amount:
 			self.discount_amount = max_discount_amount
 			self.additional_discount_percentage = 0
+
+	#controller to set order_status
+	meta = frappe.get_meta(self.doctype)
+	if meta.has_field("awb_no") and meta.has_field("order_status"):
+		if self.order_status == "To Pack" and self.packing_start and self.packing_end and not self.is_return:
+			self.delivery_date = nowdate()
+			self.posting_date = nowdate()
+			self.picked_and_packed = 1
+			self.order_status = "Completed"
+		elif self.is_return: self.order_status = ""
+		else:
+			frappe.throw("Order status must be = To Pack and done Pack start-Pack end. {0} has invalid order status: {1}".format(self.name, self.order_status))
+
+
+def si_before_cancel(self, method):
+	#controller to set order_status to cancelled if document is cancelled
+
+	meta = frappe.get_meta(self.doctype)
+	if meta.has_field("awb_no") and meta.has_field("order_status"):
+		self.order_status = "Cancelled"
+		self.picked_and_packed = 0
+
 
 def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])
@@ -576,21 +618,50 @@ def si_before_insert(self, method):
 	#make sure only import order yg sudah diproses
 	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY TO SHIP","READY_TO_SHIP","DIPROSES PELAPAK"]
 
+	#update order_Status
 	if "order_status" in frappe.db.get_table_columns(self.doctype):
-		if self.order_status:
-			if self.order_status.upper() not in status_order and "SEDANG DIPROSES" not in self.order_status.upper() and "SUDAH DIPROSES" not in self.order_status.upper() and "DIPROSES PELAPAK" not in self.order_status.upper():
-				frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
-			#elif ("J&T" in self.courier.upper() or "CEPAT" in self.courier.upper()) and not self.awb_no:
-			#	frappe.throw(_("AWB J&T Belum Diproses: {0}").format(cstr(self.no_online_order)))
+		order_status = self.order_status
+		self.order_status = ""
+
+		if order_status:
+			if order_status.upper() in status_order or "SEDANG DIPROSES" in order_status.upper() or "SUDAH DIPROSES" in order_status.upper() or "DIPROSES PELAPAK" in order_status.upper():
+				#frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
+				self.order_status = "To Pick"
+			else: 
+				self.order_status = "Pending"
+				self.pending_remarks = order_status
+				status_order = ["BELUM BAYAR","PENDING","UNPAID","MENUNGGU PEMBAYARAN"]
+				for c in status_order:
+					if c in order_status.upper():
+						self.order_status = "Pending"
+						self.pending_remarks = "Belum Dibayar / Pembayaran Belum Terverifikasi"
+						break
+
+				status_order = ["BATAL","CANCEL"]
+				for c in status_order:
+					if c in order_status.upper():
+						self.order_status = "Cancelled"
+						self.pending_remarks = "Status order dibatalkan"
+						break
+
+	#set marketplace_courier
+	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype): 
+		courier = frappe.db.sql('''select name from `tabMarketplace Courier` where (name like %s or courier_name like %s or description like %s) limit 1''', 
+			(("%" + self.courier.strip() + "%"),("%" + self.courier.strip() + "%"),("%" + self.courier.strip() + "%")), as_dict=0)
+
+		if courier: 
+			values = frappe.db.get_value("Marketplace Courier", courier[0][0], ["letter_head","courier_type"])
+			if values:
+				if frappe.db.get_value("Letter Head", values[0], "name"):
+					self.letter_head = values[0] or ""
+
+			self.marketplace_courier = courier[0][0]
+			self.courier_type = values[1] or ""
+		else:
+			frappe.throw(_("Marketplace Courier master not found using keyword '{0}'. Order No: {1}").format(self.courier, cstr(no_online_order)))
 
 
-	status_order = ["BATAL","BELUM BAYAR","PENDING","UNPAID","CANCEL","MENUNGGU PEMBAYARAN"]
-
-	if self.remarks and "order_status" not in frappe.db.get_table_columns(self.doctype):
-		for c in status_order:
-			if c in self.remarks.upper():
-				frappe.throw(_("Order is either cancelled or pending for payment: {0}").format(cstr(self.no_online_order)))
-
+	self.status = "Draft"
 	self.update_stock = 1
 	self.company = company
 
@@ -631,6 +702,7 @@ def si_before_insert(self, method):
 		self.territory = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Territory"}, "for_value") or \
 					frappe.db.get_value("Customer", {"name":self.customer}, "territory") or ""
 
+		base_total = 0.0
 		for d in self.items:
 			if not d.item_code:
 				frappe.throw(_("Item Code / SKU is required : {0}").format(self.no_online_order))
@@ -731,6 +803,8 @@ def si_before_insert(self, method):
 
 			#if "lazada_sku" in frappe.db.get_table_columns(d.doctype):
 			#	self.shipping_fee = flt(self.shipping_fee) + flt(d.shipping_fee)
+
+			base_total = base_total + (d.rate*d.qty)
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
@@ -740,8 +814,23 @@ def si_before_insert(self, method):
 			temp = frappe.generate_hash()[:12].upper()
 			self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 
-	#frappe.throw(_("SHipping Fee : {0}").format(self.shipping_fee))
 
+	#set courier_type
+	if "courier_type" in frappe.db.get_table_columns(self.doctype):
+		if "GRAB" in self.courier.upper() or "GOJEK" in self.courier.upper() or "GO-JEK" in self.courier.upper():
+			self.courier_type = "Same Day"
+		else: self.courier_type = "Regular"
+
+	#set package_weight
+	if "package_weight" in frappe.db.get_table_columns(self.doctype):
+		if "GR" in self.package_weight.upper():
+			self.package_weight = flt(cstr(self.package_weight).split(" ")[0])/1000.0 #convert to kg
+		elif "KG" in self.package_weight.upper():
+			self.package_weight = flt(cstr(self.package_weight).split(" ")[0]) #Kg
+		else: 
+			frappe.throw(_("Error Weight format for Order No : {0}").format(self.no_online_order or ""))
+	
+	#frappe.throw(_("Shipping Fee : {0}").format(self.shipping_fee))
 	if self.shipping_fee:
 		#shipping_fee = 0.0 
 		if not flt(cstr(self.shipping_fee)):
@@ -753,45 +842,7 @@ def si_before_insert(self, method):
 			insurance_fee = flt(cstr(self.insurance_fee or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(self.insurance_fee or "0"))))
 			self.insurance_fee = insurance_fee #cstr(insurance_fee).replace(".","")
 
-		self.taxes = {};
-		account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
-				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0) or \
-				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ongkos Kirim%' limit 1''', as_dict=0) or \
-				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ekspedisi%' limit 1''', as_dict=0) or \
-				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Kurir%' limit 1''', as_dict=0)
-
-		no_courier = ["POS","WAHANA","TIKI","JNE"]
-
-		#if self.courier:
-		#	self.courier = self.courier.upper()
-		is_shipping = 0
-
-		#for c in no_courier:
-
-		if self.courier:		
-			if "POS" in self.courier.upper() or "WAHANA" in self.courier.upper() or "TIKI" in self.courier.upper() or "JNE" in self.courier.upper():
-				is_shipping = 1	
-				#self.shipping_fee = "0"
-				#if "J&T" in self.courier.upper() and self.company in ("AN Electronic") and not self.awb_no:
-				#	is_shipping = 1
-			else:
-				is_shipping = 0
-				self.shipping_fee = "0"
-
-			if "CASHLESS" in self.courier.upper():
-				is_shipping = 0	
-				self.shipping_fee = "0"
-	
-		#frappe.throw(_("SHipping Fee : {0}, is_shipping: {1}").format(self.no_online_order or "", is_shipping))
-
-		if self.shipping_fee and account_head and is_shipping:
-			self.append("taxes", {
-				"charge_type": "Actual",
-				"account_head": cstr(account_head[0][0]),
-				"cost_center": frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value") or frappe.db.get_value("Company", company, "cost_center"),
-				"description": "Ongkir",
-				"tax_amount": flt(self.shipping_fee)
-			})
+		
 		account_insurance = ""
 		#frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Insurance Fee%' limit 1''', as_dict=0) or \
 		#			frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Asuransi%' limit 1''', as_dict=0)
@@ -805,15 +856,68 @@ def si_before_insert(self, method):
 				"tax_amount": flt(self.insurance_fee)
 			})
 
-	'''special disc 1% for marketplace official store'''
-	'''
-	if "additional_discount_rate" in frappe.db.get_table_columns("Customer") and not self.is_return:
-		additional_discount_rate = frappe.db.get_value("Customer", {"name":self.customer}, "additional_discount_rate")
-		if flt(additional_discount_rate) > 0:
-			self.apply_discount_on = "Net Total"
-			self.additional_discount_percentage = flt(additional_discount_rate)
-			
-	'''
+	calculate_shipping_internal_charges(self, base_total)
+
+def calculate_shipping_internal_charges(self, base_total=0):
+	''' Calculate custom insurance fee '''
+	if self.is_return: return
+
+	if self.marketplace_courier:
+		if not base_total: base_total = self.base_total
+		if not base_total: return
+
+		self.internal_charges = []
+		doc = frappe.get_doc("Marketplace Courier", self.marketplace_courier)
+		apply_charges = False
+
+		#frappe.throw("item total={0}".format(cstr(self.total)))
+		if doc:
+			multiply_factor = doc.multiply_factor or 0 
+
+			if (flt(base_total) >= flt(doc.min_total_amount)): apply_charges = True
+			elif multiply_factor and (self.shipping_fee*multiply_factor < flt(base_total)): apply_charges = True
+
+			if apply_charges:
+				for d in doc.charges:
+					if d.exclude_this_customer != self.customer:
+						self.append("internal_charges", {
+							"charge_type": d.charge_type,
+							"account_head": d.account_head,
+							"cost_center": d.cost_center or frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value") or frappe.db.get_value("Company", self.company, "cost_center"),
+							"description": d.description or d.account_head or "Additional Charge",
+							"rate": d.rate,
+							"tax_amount": d.tax_amount if d.charge_type == "Actual" else d.rate*base_total/100.0
+						})
+
+	if self.marketplace_courier and self.shipping_fee:
+		account_head = ""
+		is_shipping = 0
+		if self.marketplace_courier:
+			doc = frappe.db.get_value("Marketplace Courier", self.marketplace_courier,["shipping_account","post_to_shipping_account"])
+			if doc:
+				account_head = doc[0] or ""
+				is_shipping = doc[1] or 0
+
+		self.taxes = [];
+		if not account_head:
+			account_head = frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Shipping Fee%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Freight%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ongkos Kirim%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Ekspedisi%' limit 1''', as_dict=0) or \
+				frappe.db.sql('''select name from `tabAccount` where is_group=0 and name like '%Kurir%' limit 1''', as_dict=0)
+			if account_head: account_head = account_head[0][0]
+
+		if account_head and is_shipping:
+			self.append("taxes", {
+				"charge_type": "Actual",
+				"account_head": cstr(account_head),
+				"cost_center": frappe.db.get_value("User Permission", {"name":frappe.session.user, "allow":"Cost Center"}, "for_value") or frappe.db.get_value("Company", self.company, "cost_center"),
+				"description": "Shipping Fee (Ongkir)",
+				"tax_amount": flt(self.shipping_fee)
+			})
+
+
+
 def si_autoname(self, method):
 	#frappe.throw(_("Series : {0}, name: {1}").format(self.naming_series, self.name))
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')	

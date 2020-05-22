@@ -68,6 +68,11 @@ def get_data():
 				},
 				{
 					"type": "doctype",
+					"name": "Product Bundle",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"name": "Customer",
 					"onboard": 1
 				},
@@ -79,6 +84,11 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Marketplace Courier",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Mode of Payment",
 					"onboard": 1
 				},
 				{

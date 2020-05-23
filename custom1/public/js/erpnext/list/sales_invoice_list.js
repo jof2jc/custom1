@@ -15,12 +15,12 @@ frappe.listview_settings['Sales Invoice'] = {
 			"Unpaid and Discounted": "orange",
 			"Overdue and Discounted": "red",
 			"Overdue": "red",
-			"To Pack": "red",
-			"To Pick": "red",
-			"To Deliver": "red",
+			"To Pack": "orange",
+			"To Pick": "orange",
+			"To Deliver": "orange",
 			"Cancelled": "red",
 			"Pending": "darkgrey",
-			"Delivered or Completed": "blue",
+			"Completed": "blue",
 			"Stock-Out": "blue",
 			"Send to QC": "red"
 

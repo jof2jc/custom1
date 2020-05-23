@@ -35,6 +35,11 @@ def get_data():
 				},
 				{
 					"type": "doctype",
+					"name": "Sales Invoice",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"name": "Stock Entry",
 					"onboard": 1
 				},

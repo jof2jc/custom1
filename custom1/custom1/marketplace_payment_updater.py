@@ -191,6 +191,11 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 
 			publish_progress(row_idx)
 
+	#calculate paid amount
+	if data_import_doc.references:
+		data_import_doc.paid_amount = sum(d.ordered_amount for d in data_import_doc.references if d.ordered_amount)
+
+
 	if len(data) < 1:
 		error_flag = True
 		err_msg = err_msg + "Attached file has no records" + "\n"

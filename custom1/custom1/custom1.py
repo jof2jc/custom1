@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _, scrub
 
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name
 from frappe.utils.dateutils import parse_date
 from frappe.model.naming import make_autoname
 import json
@@ -208,6 +208,33 @@ def si_after_save(self, method):
 
 
 			
+def calculate_mp_seller_discount(self):
+	total_seller_discount = seller_discount_per_item = 0
+
+	if "seller_discount" in frappe.db.get_table_columns(self.doctype) and "seller_voucher" in frappe.db.get_table_columns(self.doctype):
+		if self.seller_discount and not flt(cstr(self.seller_discount)):
+			self.seller_discount = flt(cstr(self.seller_discount or "0").replace("Rp","").replace(".",""))
+			total_seller_discount = total_seller_discount + self.seller_discount or 0.0
+
+		if self.seller_voucher and not flt(cstr(self.seller_voucher)):
+			self.seller_voucher = flt(cstr(self.seller_voucher or "0").replace("Rp","").replace(".",""))
+			total_seller_discount = total_seller_discount + self.seller_voucher or 0.0
+
+		if total_seller_discount:
+			self.apply_discount_on = "Grand Total"
+			self.discount_amount = flt(total_seller_discount) or 0.0
+			seller_discount_per_item = total_seller_discount / (len(self.items) or 1)
+
+def update_seller_notes(self):
+	if not frappe.get_meta("Marketplace CSO"):
+		return
+
+	if frappe.get_list("Marketplace CSO",{"name":self.no_online_order.strip(), "status":("not in", ["Completed","Cancelled"]),"sales_invoice":""}):
+		cso = frappe.get_doc("Marketplace CSO", self.no_online_order.strip())
+		if cso:
+			if cso.seller_notes:
+				self.seller_notes = cso.seller_notes
+
 
 def si_validate(self, method):
 	is_online_shop=0;
@@ -215,6 +242,10 @@ def si_validate(self, method):
 		is_online_shop = frappe.db.get_value("Company", self.company, "is_online_shop")
 
 	if not is_online_shop: return
+
+	apply_marketplace_workflow = 0
+	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+		apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
 
 	meta = frappe.get_meta(self.doctype)
 	if meta.has_field("no_online_order"):
@@ -230,6 +261,8 @@ def si_validate(self, method):
 					temp = frappe.generate_hash()[:12].upper()
 					self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 
+		calculate_mp_seller_discount(self)
+
 
 	if meta.has_field("awb_no") and meta.has_field("order_status"):
 		if self.is_return: 
@@ -240,12 +273,13 @@ def si_validate(self, method):
 	meta = frappe.get_meta("Sales Invoice Item")
 
 	if meta.has_field("marketplace_return") and self.is_return:
-		for d in self.items:
-			if not d.marketplace_return:
-				frappe.throw(_("Row {0}.Sales Return must be created from Marketplace Return".format(d.idx)))
+		if apply_marketplace_workflow:
+			for d in self.items:
+				if not d.marketplace_return:
+					frappe.throw(_("Row {0}.Sales Return must be created from Marketplace Return".format(d.idx)))
 
-			elif [mr for mr in frappe.get_list("Marketplace Return Item", fields="parent", filters = [["parent","=",d.marketplace_return], ["sales_invoice","=",d.item_invoice], ["item_code","=",d.item_code], ["name","=",d.ref_item_name], ["qty","!=",abs(d.qty)]]) if mr]:
-				frappe.throw(_("Row {0}. Qty is different from Marketplace Return Qty: {1}".format(d.idx, d.marketplace_return)))
+				elif [mr for mr in frappe.get_list("Marketplace Return Item", fields="parent", filters = [["parent","=",d.marketplace_return], ["sales_invoice","=",d.item_invoice], ["item_code","=",d.item_code], ["name","=",d.ref_item_name], ["qty","!=",abs(d.qty)]]) if mr]:
+					frappe.throw(_("Row {0}. Qty is different from Marketplace Return Qty: {1}".format(d.idx, d.marketplace_return)))
 
 def si_before_submit(self, method):
 	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
@@ -261,8 +295,16 @@ def si_before_submit(self, method):
 
 	#controller to set order_status
 	meta = frappe.get_meta(self.doctype)
-	if meta.has_field("awb_no") and meta.has_field("order_status"):
-		if self.order_status == "To Pack" and self.packing_start and self.packing_end and not self.is_return:
+	if meta.has_field("awb_no") and meta.has_field("order_status") :
+		from custom1.marketplace_flow.marketplace_flow import validate_mandatory
+		msg = validate_mandatory(self)
+		if msg: frappe.throw(msg)
+
+		apply_marketplace_workflow = 0
+		if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+			apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
+
+		if (not apply_marketplace_workflow or (self.order_status == "To Pack" and self.packing_start and self.packing_end)) and not self.is_return:
 			self.delivery_date = nowdate()
 			self.posting_date = nowdate()
 			self.picked_and_packed = 1
@@ -279,6 +321,7 @@ def si_before_cancel(self, method):
 	if meta.has_field("awb_no") and meta.has_field("order_status"):
 		self.order_status = "Cancelled"
 		self.picked_and_packed = 0
+		self.delivery_date = ""
 
 
 def validate_selling_price(it):
@@ -589,7 +632,11 @@ def si_before_insert(self, method):
 		return
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')
-	#frappe.throw(company)	
+
+	apply_marketplace_workflow = 0
+
+	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+		apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
 
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company"):
@@ -626,7 +673,11 @@ def si_before_insert(self, method):
 		if order_status:
 			if order_status.upper() in status_order or "SEDANG DIPROSES" in order_status.upper() or "SUDAH DIPROSES" in order_status.upper() or "DIPROSES PELAPAK" in order_status.upper():
 				#frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
-				self.order_status = "To Pick"
+				if "finnix" in get_site_name("finnix.vef-solution.com"):
+					self.order_status = "Pending"
+				else: 
+					self.order_status = "To Pick"
+				self.pending_remarks = order_status
 			else: 
 				self.order_status = "Pending"
 				self.pending_remarks = order_status
@@ -668,14 +719,12 @@ def si_before_insert(self, method):
 	if not cstr(getdate(cstr(self.posting_date))):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
-		self.posting_time = get_time("23:59:00") or nowtime() #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
-		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
-
 		if "order_date" in frappe.db.get_table_columns(self.doctype):
 			self.order_date = cstr(getdate(cstr(self.posting_date))) #self.posting_date
 
-	#if "import_time" in frappe.db.get_table_columns("Sales Invoice"): #or self.import_time is not None:
-	#	self.import_time = nowtime()	
+		self.posting_time = nowtime() or get_time("23:59:00") #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
+		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
+
 
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
@@ -701,6 +750,9 @@ def si_before_insert(self, method):
 
 		self.territory = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Territory"}, "for_value") or \
 					frappe.db.get_value("Customer", {"name":self.customer}, "territory") or ""
+
+		calculate_mp_seller_discount(self)
+		update_seller_notes(self)
 
 		base_total = 0.0
 		for d in self.items:
@@ -804,7 +856,7 @@ def si_before_insert(self, method):
 			#if "lazada_sku" in frappe.db.get_table_columns(d.doctype):
 			#	self.shipping_fee = flt(self.shipping_fee) + flt(d.shipping_fee)
 
-			base_total = base_total + (d.rate*d.qty)
+			base_total = base_total + flt(d.rate) * flt(d.qty)
 	else:
 		frappe.throw(_("Online Order No : {0} is invalid").format(self.no_online_order or ""))
 
@@ -823,12 +875,13 @@ def si_before_insert(self, method):
 
 	#set package_weight
 	if "package_weight" in frappe.db.get_table_columns(self.doctype):
-		if "GR" in self.package_weight.upper():
-			self.package_weight = flt(cstr(self.package_weight).split(" ")[0])/1000.0 #convert to kg
-		elif "KG" in self.package_weight.upper():
-			self.package_weight = flt(cstr(self.package_weight).split(" ")[0]) #Kg
-		else: 
-			frappe.throw(_("Error Weight format for Order No : {0}").format(self.no_online_order or ""))
+		if self.package_weight:
+			if "GR" in self.package_weight.upper():
+				self.package_weight = flt(cstr(self.package_weight).split(" ")[0],3)/1000.0 #convert to kg
+			elif "KG" in self.package_weight.upper():
+				self.package_weight = flt(cstr(self.package_weight).split(" ")[0],3) #Kg
+			else: 
+				frappe.throw(_("Error Weight format for Order No : {0}").format(self.no_online_order or ""))
 	
 	#frappe.throw(_("Shipping Fee : {0}").format(self.shipping_fee))
 	if self.shipping_fee:
@@ -862,6 +915,9 @@ def calculate_shipping_internal_charges(self, base_total=0):
 	''' Calculate custom insurance fee '''
 	if self.is_return: return
 
+	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+		if not frappe.get_value("Company", self.company,"apply_marketplace_workflow"): return
+
 	if self.marketplace_courier:
 		if not base_total: base_total = self.base_total
 		if not base_total: return
@@ -872,10 +928,10 @@ def calculate_shipping_internal_charges(self, base_total=0):
 
 		#frappe.throw("item total={0}".format(cstr(self.total)))
 		if doc:
-			multiply_factor = doc.multiply_factor or 0 
+			multiply_factor = doc.multiply_factor or 0.0 
 
 			if (flt(base_total) >= flt(doc.min_total_amount)): apply_charges = True
-			elif multiply_factor and (self.shipping_fee*multiply_factor < flt(base_total)): apply_charges = True
+			elif multiply_factor and (flt(self.shipping_fee) * multiply_factor < flt(base_total)): apply_charges = True
 
 			if apply_charges:
 				for d in doc.charges:
@@ -889,7 +945,7 @@ def calculate_shipping_internal_charges(self, base_total=0):
 							"tax_amount": d.tax_amount if d.charge_type == "Actual" else d.rate*base_total/100.0
 						})
 
-	if self.marketplace_courier and self.shipping_fee:
+	if self.marketplace_courier and self.shipping_fee and not self.taxes:
 		account_head = ""
 		is_shipping = 0
 		if self.marketplace_courier:
@@ -1186,8 +1242,8 @@ def update_default_fiscal_year():
 
 def delete_old_docs_daily1():
 	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 
-		and file_name not like '%into-the-dawn%' and file_name not like '%.png%' and file_name not like '%Generate_Template%' 
-		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
+		and file_name not like '%into-the-dawn%' and file_name not like '%Generate_Template%' 
+		and attached_to_doctype in ('Data Import') order by creation desc""", as_dict=1)
 
 	if old_docs:
 		for d in old_docs:

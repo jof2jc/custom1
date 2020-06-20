@@ -9,8 +9,11 @@
   "title",
   "naming_series",
   "pickup_session",
+  "customer",
   "cb_9",
   "date",
+  "sc_07",
+  "courier_references",
   "sc_02",
   "marketplace_courier",
   "courier_type",
@@ -19,6 +22,7 @@
   "message",
   "cb_01",
   "courier_name",
+  "btn_reset",
   "label_list",
   "total_package",
   "sc_remarks",
@@ -45,15 +49,15 @@
   {
    "fieldname": "marketplace_courier",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Marketplace Courier",
-   "options": "Marketplace Courier",
-   "reqd": 1
+   "options": "Marketplace Courier"
   },
   {
    "fieldname": "courier_type",
    "fieldtype": "Data",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Courier Type",
    "read_only": 1
   },
@@ -61,7 +65,7 @@
    "bold": 1,
    "fieldname": "scan_data",
    "fieldtype": "Data",
-   "label": "Scan Print Label"
+   "label": "Scan Label"
   },
   {
    "fieldname": "cb_01",
@@ -70,7 +74,7 @@
   {
    "fieldname": "courier_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Courier Name",
    "read_only": 1
   },
@@ -84,6 +88,7 @@
   {
    "fieldname": "total_package",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total Package",
    "read_only": 1
   },
@@ -99,7 +104,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "{marketplace_courier}",
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
@@ -111,6 +115,7 @@
    "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
+   "in_standard_filter": 1,
    "label": "Date",
    "reqd": 1
   },
@@ -162,10 +167,35 @@
    "fieldname": "picker_person_name",
    "fieldtype": "Data",
    "label": "Picker Person Name"
+  },
+  {
+   "bold": 1,
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer / Store",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "sc_07",
+   "fieldtype": "Section Break",
+   "label": "Select Marketplace Courier"
+  },
+  {
+   "fieldname": "courier_references",
+   "fieldtype": "Table",
+   "options": "Marketplace Courier Reference",
+   "reqd": 1
+  },
+  {
+   "fieldname": "btn_reset",
+   "fieldtype": "Button",
+   "label": "Reset"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-05-07 11:27:24.097874",
+ "modified": "2020-06-10 17:32:37.823636",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Outbond Receipt",

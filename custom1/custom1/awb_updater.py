@@ -68,39 +68,40 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 				"data_import": data_import_doc.name, "reload": reload}, user=frappe.session.user)
 
 
+	def update_doc(doc, mydict):
+		doc.awb_no = mydict.awb_no
+		if flt(mydict.berat) and not doc.package_weight: 
+			doc.package_weight = flt(mydict.berat)
+		if len(mydict) > 5:
+			if mydict.get("buyer_notes") and not doc.buyer_notes:
+				doc.buyer_notes = mydict.buyer_notes
+		doc.save()
+
 	def update_awb_dict(mydict, skip_errors=0, idx=1, rollback_flag=False):
 		try: 
 			doc = frappe._dict()
 			if frappe.db.get_value(data_import_doc.reference_doctype, {"name":mydict.order_no,"is_return":0},"name"):
 				doc = frappe.get_doc(data_import_doc.reference_doctype, {"name":mydict.order_no,"is_return":0})
 			if doc:
-				if mydict.awb_no[-8:].isdigit() or len(mydict.awb_no.split("-")[0]) == 4: #check awb format is correct, last 8 digits must be number
+				if mydict.awb_no[-8:].isdigit() or len(mydict.awb_no.split("-")) >= 2: #check awb format is correct, last 8 digits must be number
 					if not doc.awb_no and mydict.awb_no and doc.docstatus == 0:
-						doc.awb_no = mydict.awb_no
 
 						log(**{"row": idx, "title": 'Updated AWB "%s" for "%s"' % (mydict.awb_no, as_link(doc.doctype, doc.name)),
 							"link": "", "message": 'Document successfully updated', "indicator": "green"
 						})
-						if mydict.berat and not doc.package_weight: 
-							doc.package_weight = mydict.berat
-						doc.save()
+						update_doc(doc, mydict)
 
 					elif doc.awb_no and doc.awb_no != mydict.awb_no and doc.docstatus == 0:
 						log(**{"row": idx, "title": 'Updated AWB "%s" for "%s"' % (mydict.awb_no, as_link(doc.doctype, doc.name)),
 							"link": "", "message": 'Different AWB "%s" found. Document successfully updated' % (doc.awb_no), "indicator": "blue"
 						})
-						doc.awb_no = mydict.awb_no
-						if mydict.berat and not doc.package_weight: 
-							doc.package_weight = mydict.berat
-						doc.save()
+						update_doc(doc, mydict)
 
 					elif doc.awb_no and doc.docstatus == 0:
 						log(**{"row": idx, "title": 'AWB "%s" was updated for "%s"' % (mydict.awb_no, as_link(doc.doctype, doc.name)),
 							"link": "", "message": 'Ignored', "indicator": "orange"
 						})
-						if mydict.berat and not doc.package_weight: 
-							doc.package_weight = mydict.berat
-							doc.save()
+						update_doc(doc, mydict)
 
 					elif doc.docstatus == 1:
 						log(**{"row": idx, "title": 'Order "%s" is delivered' % (mydict.order_no),
@@ -205,15 +206,25 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 				
 					if len(mydict)==0 and "order_no" not in mydict and a:
 						mydict["order_no"]=a
-					elif len(mydict)==1 and "courier" not in mydict and a:
+					elif len(mydict)==1 and "awb_no" not in mydict and a:
+						for dd in line.findAll('div',{'class':'booking-code-text'}):
+							awb_text = dd.text.strip().split('\n')[0]
+							if awb_text:
+								mydict["awb_no"]=awb_text.strip()
+								break
+
+					elif len(mydict)==2 and "courier" not in mydict and a:
 						mydict["courier"]=a
-					elif len(mydict)==2 and "berat" not in mydict and a:
-						mydict["berat"]=a.split(":")[1][:-2]
-					elif len(mydict)==3 and "ongkir" not in mydict and a:
-						mydict["ongkir"]=a	
-					elif len(mydict)==4 and "awb_no" not in mydict and a:
-						awb_no = cstr(td.text.split()[0])
-						if (awb_no): mydict["awb_no"]=awb_no.strip()
+
+					elif len(mydict)==3 and "berat" not in mydict and a:
+						if "BERAT:" in a.upper():
+							berat = a.strip().split(':')[1].split('Kg')[0]
+							mydict["berat"]= flt(berat)
+	
+					elif len(mydict)==4 and "ongkir" not in mydict and a:
+						mydict["ongkir"]=a
+						#awb_no = cstr(td.text.split()[0])
+						#if (awb_no): mydict["awb_no"]=awb_no.strip()
 
 						if len(mydict) == 5:
 							update_awb_dict(mydict, data_import_doc.skip_errors, len(data)+1)
@@ -230,12 +241,12 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 				idx=i+1
 	
 				for div in line.findAll('div',{'class':'row section-logistic-booking'}): #kode-booking AWB
-					awb_no = str(div.text.split()[2])
-					if awb_no and len(mydict)==0 and "awb_no" not in mydict:
-						mydict["awb_no"] = awb_no.strip()
+					if "KODE BOOKING" in div.text.upper():
+						awb_no = str(div.text.split()[2])
+						if awb_no and len(mydict)==0 and "awb_no" not in mydict:
+							mydict["awb_no"] = awb_no.strip()
 
-					n=0
-					
+					n=0					
 					for dd in line.findAll('dd',{'class':'text bukalapak-transaction-slip-buyer--name'}):
 						a = dd.text.strip()
 
@@ -246,11 +257,22 @@ def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_er
 						elif len(mydict)==3 and "courier" not in mydict and a and n==4:
 							mydict["courier"]=a
 						elif len(mydict)==4 and "berat" not in mydict and a and n==5:
-							mydict["berat"]=flt(a.split(" ")[0])/1000.0 #convert from gr to kg
+							mydict["berat"]=flt(a.split(" ")[0],3)/1000.0 #convert from gr to kg
 
-							if len(mydict) == 5:
-								update_awb_dict(mydict, data_import_doc.skip_errors, len(data)+1)
+							#if len(mydict) == 6:
+							#	update_awb_dict(mydict, data_import_doc.skip_errors, len(data)+1)
 						n += 1
+
+					for i, div in enumerate(line.findAll('div',{'class':'bukalapak-transaction-slip-section--label'}), 1):
+						a = div.text
+						if len(mydict)==5 and "buyer_notes" not in mydict and a and i==3:
+							buyer_notes = div.find_next_sibling('div').text if "CATATAN" in a.upper() else ""
+
+							if buyer_notes:
+								mydict["buyer_notes"]=cstr(buyer_notes.strip())
+
+							if len(mydict) == 6:
+								update_awb_dict(mydict, data_import_doc.skip_errors, len(data)+1)
 
 				publish_progress(i+1)
 		f.close()

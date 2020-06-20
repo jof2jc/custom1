@@ -9,15 +9,22 @@ export default class VEFBulkOperations {
 		const allow_print_for_draft = cint(print_settings.allow_print_for_draft);
 		const is_submittable = frappe.model.is_submittable(this.doctype);
 		const allow_print_for_cancelled = cint(print_settings.allow_print_for_cancelled);
+		
+		console.log('allow_print_for_draft == ' + allow_print_for_draft);
+		console.log('allow_print_for_draft == ' + allow_print_for_cancelled);
 
 		const valid_docs = docs.filter(doc => {
 			return !is_submittable || doc.docstatus === 1 ||
 				(allow_print_for_cancelled && doc.docstatus == 2) ||
 				(allow_print_for_draft && doc.docstatus == 0) ||
-				frappe.user.has_role('Administrator');
+				frappe.user.has_role('Accounts User');
 		}).map(doc => doc.name);
 
+		console.log(valid_docs);
+
 		const invalid_docs = docs.filter(doc => !valid_docs.includes(doc.name));
+
+		console.log(invalid_docs);
 
 		if (invalid_docs.length > 0) {
 			frappe.msgprint(__('You selected Draft or Cancelled documents'));

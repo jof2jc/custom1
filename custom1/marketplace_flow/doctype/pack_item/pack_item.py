@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
 from frappe.utils.dateutils import parse_date
 import json
+from custom1.marketplace_flow.marketplace_flow import validate_mandatory
 
 class PackItem(Document):
 	pass
@@ -100,6 +101,11 @@ class PackItem(Document):
 
 		#update paking_start _time
 		if doc and self.type == "Scan Start":
+			msg = validate_mandatory(doc)
+			if msg:
+				self.status = msg
+				return
+
 			if not doc.packing_start and doc.order_status in ("To Pack") and doc.docstatus == 0: 
 				doc.packing_start = now_datetime()
 				doc.save()
@@ -111,6 +117,7 @@ class PackItem(Document):
 			self.packing_end_time = doc.packing_end
 
 		elif doc and self.type == "Scan End":
+			validate_mandatory(doc)
 			if doc.order_status in ("To Pack") and doc.docstatus == 0: 
 				if not doc.packing_end or doc.amended_from:
 					doc.packing_end = now_datetime()

@@ -9,6 +9,7 @@
   "courier_id",
   "courier_name",
   "courier_type",
+  "is_awb_mandatory",
   "cd_01",
   "shipping_account",
   "post_to_shipping_account",
@@ -51,6 +52,7 @@
    "reqd": 1
   },
   {
+   "default": "0",
    "fieldname": "cd_01",
    "fieldtype": "Column Break"
   },
@@ -88,6 +90,7 @@
   },
   {
    "bold": 1,
+   "description": "Put each keyword on new line. These will be used for master query while importing data",
    "fieldname": "description",
    "fieldtype": "Small Text",
    "in_global_search": 1,
@@ -118,9 +121,15 @@
    "fieldname": "print_label_logo",
    "fieldtype": "Attach Image",
    "label": "Print Label Logo"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_awb_mandatory",
+   "fieldtype": "Check",
+   "label": "Is AWB Mandatory for this courier"
   }
  ],
- "modified": "2020-05-15 07:19:12.557218",
+ "modified": "2020-06-12 17:59:00.692198",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Courier",

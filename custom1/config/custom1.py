@@ -184,6 +184,13 @@ def get_data():
 				{
 					"type": "report",
 					"is_query_report": True,
+					"name": "Stock Reorder Projection",
+					"doctype": "Item",
+					"dependencies": ["Item"],
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
 					"name": "Stock Ageing",
 					"doctype": "Item",
 					"dependencies": ["Item"],

@@ -40,6 +40,11 @@ def get_data():
 				},
 				{
 					"type": "doctype",
+					"name": "Purchase Invoice",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"name": "Stock Entry",
 					"onboard": 1
 				},
@@ -50,9 +55,14 @@ def get_data():
 				},
 				{
 					"type": "doctype",
+					"name": "Journal Entry",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"name": "Pick and Pack",
-					"label": _("Scan-out To Deliver Items"),
-					"hidden": 1
+					"label": _("Scan to Deliver Items (Pick and Pack)"),
+					"onboard": 1
 				}
 			]
 		},
@@ -111,9 +121,19 @@ def get_data():
 			]
 		},
 		{
-			"label": _("Reports"),
+			"label": _("Working Sheet"),
 			"icon": "fa fa-star",
 			"items": [
+				{
+					"type": "doctype",
+					"name": "Task",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Marketplace CSO",
+					"onboard": 1
+				},
 				{
 					"type": "report",
 					"name": "Fulfillment Sheet",

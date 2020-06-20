@@ -25,7 +25,7 @@ def execute(filters=None):
 	total_return = 0
 
 	data = []
-	for item in sorted(items):
+	for item in items:
 		if delivered_item_map.get(item.name) is not None:
 			#qty_map = {k:v for k,v in delivered_item_map.items() if k == item.name and delivered_item_map[k]["warehouse"]==item.warehouse}
 			#total_outgoing = flt(qty_map.get(item.name,{}).get("si_qty",0))

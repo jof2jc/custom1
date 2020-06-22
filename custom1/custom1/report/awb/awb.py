@@ -18,7 +18,7 @@ def execute(filters=None):
 	for d in data_map:
 		data.append([d.name, 1, d.qty, d.docstatus, d.order_status, d.customer, d.courier, d.awb_no,
 				d.order_date if d.order_date else d.posting_date, d.creation, d.delivery_date, date_diff(d.delivery_date or nowdate(),d.creation),
-				d.territory	
+				d.territory, d.customer_group
 			])
 
 	return columns, data
@@ -29,7 +29,7 @@ def get_columns(filters):
 
 	columns = [_("Order ID") + ":Link/Sales Invoice:150", _("Pack") + ":Int:50", _("Qty") + ":Float:50", _("Status") + "::60", _("Order Status") + "::100", _("Store Name") + ":Link/Customer:120", 
 			_("Courier") + "::100", _("AWB No") + "::120", _("Order Date") + ":Date:80",_("Upload Date") + ":Date:80", 
-			_("Delivery Date") + ":Date:80", _("Days") + ":Int:50", _("Territory") + ":Link/Territory:100"
+			_("Delivery Date") + ":Date:80", _("Days") + ":Int:50", _("Territory") + ":Link/Territory:100", _("Customer Group") + ":Link/Customer Group:100"
 		]
 
 	return columns
@@ -41,7 +41,7 @@ def get_conditions(filters):
 		conditions.append("si.company=%(company)s")
 
 	if filters.get("from_date"):
-		conditions.append("date(si.creation) between %(from_date)s and %(to_date)s")
+		conditions.append("(date(si.creation) between %(from_date)s and %(to_date)s) or(date(si.order_date) between %(from_date)s and %(to_date)s)")
 
 	if filters.get("territory"):
 		conditions.append("si.territory=%(territory)s")
@@ -56,8 +56,9 @@ def get_data(filters):
 	#		from `tabSales Invoice` where is_return=0 {conditions}""".format(conditions=get_conditions(filters)))
 
 	data_map = frappe.db.sql("""select si.name, sum(si_item.qty) as qty, si.customer, si.awb_no, si.docstatus, si.order_status, si.posting_date, si.order_date,
-				date(si.creation) as creation, si.delivery_date, si.courier, si.territory 
+				date(si.creation) as creation, si.delivery_date, si.courier, si.territory, c.customer_group 
 			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent 
+			join `tabCustomer` c on c.name = si.customer
 			where si.docstatus <=1 and si.is_return=0 {conditions} 
 			group by si.name, si.customer, si.awb_no, si.docstatus, si.order_status, si.posting_date, si.delivery_date, si.courier
 			order by date(si.creation) desc"""\

@@ -339,6 +339,8 @@ def submit_awb_invoice(ref_no):
 	if inv:
 		inv.flags.ignore_permissions = True
 		inv.delivery_date = nowdate()
+		inv.posting_date = nowdate()
+		inv.posting_time = nowtime()
 		inv.picked_and_packed = 1
 		#inv.title = "[PnP]" + inv.title
 		inv.submit()

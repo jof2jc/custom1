@@ -95,7 +95,6 @@ def set_return_details(self, method):
 
 	for d in self.items:
 		serial_nos = cstr(d.serial_no).strip().replace(',', '\n').split('\n')
-		print serial_nos  
 		
 		has_serial_no = frappe.db.get_value("Item", d.item_code, "has_serial_no")
 
@@ -104,7 +103,6 @@ def set_return_details(self, method):
 			for imei in serial_nos:
 				serial_doc = frappe.get_doc("Serial No", imei)
 
-				print self.doctype
 				#print self.ship_to_service_supplier 
 	
 				if self.doctype == "Stock Entry":
@@ -143,7 +141,6 @@ def set_return_details(self, method):
 
 def imp_update_installment_payment_details(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
-	print company
 	#frappe.throw(_("Company is {0}").format(company))
 
 	if company != "IMPERIAL MEGA PRIMA":
@@ -166,7 +163,6 @@ def imp_update_installment_payment_details(self, method):
 
 def imp_before_cancel_installment_payment(self, method):
 	company = frappe.db.get_value("Global Defaults", None, "default_company") 
-	print company
 	#frappe.throw(_("Company is {0}").format(company))
 
 	if company != "IMPERIAL MEGA PRIMA":

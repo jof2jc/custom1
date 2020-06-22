@@ -173,10 +173,7 @@ doc_events = {
 	"after_insert": "custom1.custom1.custom1.submit_after_save"
     },
     "Sales Invoice": {
-        "on_submit": "custom1.custom1.custom_imei.set_return_details",
-	"on_submit": "custom1.custom1.makko.update_linked_docs",
 	"before_submit": "custom1.custom1.custom1.si_before_submit",
-	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",
 	"before_print": "custom1.custom1.custom1.update_print_counter1"
@@ -184,11 +181,6 @@ doc_events = {
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details"
-    },
-    "Payment Entry": {
-        "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
-	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
-	#"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
     },
     "Payment Reconciliation": {
 	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"

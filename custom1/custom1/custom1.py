@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _, scrub
 
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name
+
 from frappe.utils.dateutils import parse_date
 from frappe.model.naming import make_autoname
 import json
@@ -671,7 +672,7 @@ def si_before_insert(self, method):
 				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")
 				if warehouse:
 					d.warehouse = warehouse
-				if warehouse and is_stock_item and not frappe.db.get_single_value('Stock Settings', 'allow_negative_stock'):
+				if warehouse and is_stock_item and not frappe.db.get_single_value('Stock Settings', 'allow_negative_stock') and "an.vef-solution.com" not in get_site_name("an.vef-solution.com"):
 					stock_balance = get_stock_balance(d.item_code, d.warehouse, self.posting_date or nowdate(), self.posting_time)
 					#if d.item_code == "A309PN":
 					#	frappe.throw(_("Item : {0} Stock: {1} required: {2} Posting Date: {3} Posting Time: {4} Order time: {5}").format(d.item_code, cstr(stock_balance),cstr(d.qty), cstr(self.posting_date), cstr(self.posting_time), cstr(get_time(self.posting_date))))

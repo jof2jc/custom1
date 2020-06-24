@@ -232,13 +232,19 @@ def si_before_submit(self, method):
 	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
 		if self.no_online_order:
 			self.posting_date = nowdate()
+			self.posting_time = nowtime()
 			#frappe.msgprint(self.posting_date)
 
+			if "delivery_date" in frappe.db.get_table_columns(self.doctype):
+				self.delivery_date = nowdate()
+	
 	if "max_discount_amount" in frappe.db.get_table_columns("Customer") and not self.is_return:
 		max_discount_amount = flt(frappe.db.get_value("Customer", {"name":self.customer}, "max_discount_amount"))
 		if max_discount_amount != 0.0 and flt(self.discount_amount) > max_discount_amount:
 			self.discount_amount = max_discount_amount
 			self.additional_discount_percentage = 0
+
+	
 
 def validate_selling_price(it):
 	last_purchase_rate, is_stock_item = frappe.db.get_value("Item", it.item_code, ["last_purchase_rate", "is_stock_item"])

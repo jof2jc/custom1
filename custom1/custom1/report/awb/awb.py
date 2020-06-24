@@ -56,7 +56,7 @@ def get_data(filters):
 	#		from `tabSales Invoice` where is_return=0 {conditions}""".format(conditions=get_conditions(filters)))
 
 	data_map = frappe.db.sql("""select si.name, sum(si_item.qty) as qty, si.customer, si.awb_no, si.docstatus, si.order_status, si.posting_date, si.order_date,
-				date(si.creation) as creation, si.delivery_date, si.courier, si.territory, c.customer_group 
+				date(si.creation) as creation, ifnull(si.delivery_date, si.posting_date) as delivery_date, si.courier, si.territory, c.customer_group 
 			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent 
 			join `tabCustomer` c on c.name = si.customer
 			where si.docstatus <=1 and si.is_return=0 {conditions} 

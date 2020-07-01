@@ -41,7 +41,7 @@ def get_conditions(filters):
 		conditions.append("si.company=%(company)s")
 
 	if filters.get("from_date"):
-		conditions.append("(date(si.creation) between %(from_date)s and %(to_date)s) or(date(si.order_date) between %(from_date)s and %(to_date)s)")
+		conditions.append("date(si.order_date) between %(from_date)s and %(to_date)s")
 
 	if filters.get("territory"):
 		conditions.append("si.territory=%(territory)s")

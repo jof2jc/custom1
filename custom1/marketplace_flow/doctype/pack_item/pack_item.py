@@ -119,14 +119,17 @@ class PackItem(Document):
 		elif doc and self.type == "Scan End":
 			validate_mandatory(doc)
 			if doc.order_status in ("To Pack") and doc.docstatus == 0: 
-				if not doc.packing_end or doc.amended_from:
+				if not doc.packing_end or doc.amended_from:	
 					doc.packing_end = now_datetime()
 
 					#submit invoice
 					doc.flags.ignore_permissions = True
-					#doc.delivery_date = nowdate()
-					#doc.picked_and_packed = 1
-					#doc.order_status = "Completed"
+					doc.posting_date = nowdate()
+					doc.posting_time = nowtime()
+
+					doc.delivery_date = nowdate()
+					doc.picked_and_packed = 1
+					doc.order_status = "Completed"
 
 					doc.save()
 					doc.submit()

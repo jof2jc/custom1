@@ -3,7 +3,8 @@
 		"public/js/frappe/ui/toolbar/navbar.html",
 		"public/js/frappe/ui/toolbar/search.js",
 		"public/js/frappe/change_log.html",
-		"public/js/frappe/misc/help.js"
+		"public/js/frappe/misc/help.js",
+		"public/js/utils.js"
 
 	],
 	"js/form1.min.js": [

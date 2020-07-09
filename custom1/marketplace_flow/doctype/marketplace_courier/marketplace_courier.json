@@ -3,6 +3,7 @@
  "autoname": "field:courier_id",
  "creation": "2020-03-15 13:30:37.598436",
  "doctype": "DocType",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -129,7 +130,7 @@
    "label": "Is AWB Mandatory for this courier"
   }
  ],
- "modified": "2020-06-12 17:59:00.692198",
+ "modified": "2020-07-03 14:16:32.691134",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Courier",
@@ -149,6 +150,8 @@
   }
  ],
  "quick_entry": 1,
+ "search_fields": "courier_id, courier_name",
+ "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

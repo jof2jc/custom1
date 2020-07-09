@@ -122,17 +122,17 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 				is_finish=0
 				for mpm in customer_doc.marketplace_payment_mapper:
 
-					s = '#'.join([cstr(d) for d in row if d]).split(mpm.keyword.strip())
+					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword.strip())
 					if len(s) > 1: #mapper matched
 						try:
 							if not val[0]:
-								val[0] = s[1].split('#')[0].strip()
+								val[0] = s[1].split('$')[0].strip()
 								val[2] = mpm.type
 								val[3] = mpm.amount_column_index
 								#err_msg = err_msg + "row %s. new match mpm %s. val: %s" % (cstr(row_idx),cstr(mpm.idx), cstr(val)) + "\n"
 						except:
 							error_flag = True
-							err_msg = err_msg + 'Data Row %s. Could not get Order ID "%s"' % (cstr(row_idx), cstr(s)) + "\n"
+							err_msg = err_msg + 'Data Row %s. Could not get Order_ID for keyword "%s"' % (cstr(row_idx), cstr(s)) + "\n"
 
 					'''
 					if mpm.keyword.strip() in cstr(d): #get order_id
@@ -201,6 +201,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 		err_msg = err_msg + "Attached file has no records" + "\n"
 
 
+	#error_flag = True
 
 	log_message = {"messages": data, "error": error_flag}
 
@@ -220,11 +221,10 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 		else: data_import_doc.import_status = "No records found"
 
 		data_import_doc.save()
-
-
 		if data_import_doc.import_status == "Success":
 			publish_progress(100, True)
 		else: publish_progress(0, True)
+
 		frappe.db.commit()
 		
 	return log_message

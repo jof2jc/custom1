@@ -26,10 +26,13 @@
   "label_list",
   "total_package",
   "sc_remarks",
+  "picker_person_name",
+  "picker_phone_no",
   "remarks",
   "cb_03",
-  "attach_image",
-  "picker_person_name",
+  "pack_image",
+  "driver_image",
+  "additional_image",
   "amended_from"
  ],
  "fields": [
@@ -139,11 +142,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "attach_image",
-   "fieldtype": "Attach Image",
-   "label": "Attach Image"
-  },
-  {
    "fieldname": "sc_remarks",
    "fieldtype": "Section Break"
   },
@@ -192,10 +190,30 @@
    "fieldname": "btn_reset",
    "fieldtype": "Button",
    "label": "Reset"
+  },
+  {
+   "fieldname": "picker_phone_no",
+   "fieldtype": "Data",
+   "label": "Picker Phone No"
+  },
+  {
+   "fieldname": "pack_image",
+   "fieldtype": "Attach Image",
+   "label": "Pack Image"
+  },
+  {
+   "fieldname": "driver_image",
+   "fieldtype": "Attach Image",
+   "label": "Picker / Driver Image"
+  },
+  {
+   "fieldname": "additional_image",
+   "fieldtype": "Attach Image",
+   "label": "Additional Image"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-06-10 17:32:37.823636",
+ "modified": "2020-06-24 14:36:59.963802",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Outbond Receipt",

@@ -250,6 +250,8 @@ def si_validate(self, method):
 	meta = frappe.get_meta(self.doctype)
 	if meta.has_field("no_online_order"):
 		if self.no_online_order:
+			self.posting_date = nowdate()
+			self.posting_time = nowtime()
 			invoice_no = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
 	
 			if invoice_no and self.no_online_order and len(cstr(self.no_online_order)) > 10 and not self.is_return:
@@ -285,7 +287,10 @@ def si_before_submit(self, method):
 	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
 		if self.no_online_order:
 			self.posting_date = nowdate()
+			self.posting_time = nowtime()
 			#frappe.msgprint(self.posting_date)
+			if "delivery_date" in frappe.db.get_table_columns(self.doctype):
+				self.delivery_date = nowdate()
 
 	if "max_discount_amount" in frappe.db.get_table_columns("Customer") and not self.is_return:
 		max_discount_amount = flt(frappe.db.get_value("Customer", {"name":self.customer}, "max_discount_amount"))
@@ -424,6 +429,9 @@ def submit_awb_invoice(ref_no):
 	if inv:
 		inv.flags.ignore_permissions = True
 		inv.delivery_date = nowdate()
+		inv.posting_date = nowdate()
+		inv.posting_time = nowtime()
+
 		inv.picked_and_packed = 1
 		#inv.title = "[PnP]" + inv.title
 		inv.submit()
@@ -798,7 +806,12 @@ def si_before_insert(self, method):
 					#if d.item_code == "A309PN":
 					#	frappe.throw(_("Item : {0} Stock: {1} required: {2} Posting Date: {3} Posting Time: {4} Order time: {5}").format(d.item_code, cstr(stock_balance),cstr(d.qty), cstr(self.posting_date), cstr(self.posting_time), cstr(get_time(self.posting_date))))
 					if (stock_balance - flt(d.qty)) < 0.0:
-						frappe.throw(_("Insufficient Stock {0} > {1} for item : {2} in Warehouse {3}").format(cstr(d.qty),cstr(stock_balance),d.item_code,d.warehouse))
+						ignore_insufficient_stock = frappe.db.get_single_value("Local Marketplace Settings","ignore_insufficient_stock") or 0
+						if not ignore_insufficient_stock:
+							frappe.throw(_("Insufficient Stock {0} > {1} for item : {2} in Warehouse {3}").format(cstr(d.qty),cstr(stock_balance),d.item_code,d.warehouse))
+						elif ignore_insufficient_stock: 
+							self.insufficient_stock = ignore_insufficient_stock
+
 				elif is_stock_item and not warehouse:
 					frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))
 			else:

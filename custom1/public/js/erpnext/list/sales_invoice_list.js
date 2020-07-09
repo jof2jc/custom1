@@ -22,7 +22,8 @@ frappe.listview_settings['Sales Invoice'] = {
 			"Pending": "darkgrey",
 			"Completed": "blue",
 			"Stock-Out": "blue",
-			"Send to QC": "red"
+			"Send to QC": "red",
+			"Insufficient Stock": "darkgrey"
 
 		};
 		if (frappe.meta.has_field("Sales Invoice","order_status")){

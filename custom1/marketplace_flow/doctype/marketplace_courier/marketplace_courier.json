@@ -49,7 +49,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Courier Type",
-   "options": "\nRegular\nSame Day",
+   "options": "\nRegular\nInstant\nSame Day\nNext Day\nCargo\nExpress",
    "reqd": 1
   },
   {
@@ -130,7 +130,7 @@
    "label": "Is AWB Mandatory for this courier"
   }
  ],
- "modified": "2020-07-03 14:16:32.691134",
+ "modified": "2020-07-09 19:23:10.496310",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Courier",

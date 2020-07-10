@@ -9,7 +9,7 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
-					"name": "Data Import",
+					"name": "Data Import Legacy",
 					"label": _("Import Online Order"),
 					"onboard": 1
 				},
@@ -78,8 +78,9 @@ def get_data():
 				},
 				{
 					"type": "doctype",
-					"name": "Item Group",
-					"onboard": 1
+					"label": _("Item Group"),
+					"link": "Tree/Item Group",
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
@@ -117,6 +118,12 @@ def get_data():
 					"name": "Batch",
 					"onboard": 1,
 					"dependencies": ["Item"],
+				},
+				{
+					"type": "doctype",
+					"label": _("Warehouse"),
+					"link": "Tree/Warehouse",
+					"onboard": 1,
 				},
 			]
 		},

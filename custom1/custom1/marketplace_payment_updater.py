@@ -191,9 +191,22 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 
 			publish_progress(row_idx)
 
-	#calculate paid amount
+	#calculate paid amount and deductions if over paid
 	if data_import_doc.references:
 		data_import_doc.paid_amount = sum(d.ordered_amount for d in data_import_doc.references if d.ordered_amount)
+		total_allocated = sum(d.allocated_amount for d in data_import_doc.references if d.allocated_amount)
+
+		if data_import_doc.paid_amount > total_allocated:
+			marketplace_fee_account = frappe.get_value("Account",{"account_type":"Expense Account","disabled":0,"is_marketplace_fee_account":1},"name") or ""
+
+			data_import_doc.deductions = []
+			if marketplace_fee_account:
+				data_import_doc.append("deductions",
+					{
+						"account": marketplace_fee_account,
+						"cost_center": frappe.get_value("Company", data_import_doc.company, "cost_center") or "",
+						"amount": flt(total_allocated) - flt(data_import_doc.paid_amount)
+					})
 
 
 	if len(data) < 1:

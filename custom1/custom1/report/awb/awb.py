@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import msgprint, _
-from frappe.utils import flt,cstr, nowdate, date_diff, getdate
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, date_diff, formatdate, get_datetime, add_days, getdate, get_time, get_site_name
 
 def execute(filters=None):
 	if not filters: filters = {}
@@ -17,8 +17,8 @@ def execute(filters=None):
 	
 	for d in data_map:
 		data.append([d.name, 1, d.qty, d.docstatus, d.order_status, d.customer, d.courier, d.awb_no,
-				d.order_date if d.order_date else d.posting_date, d.creation, d.delivery_date, date_diff(d.delivery_date or nowdate(),d.creation),
-				d.territory	
+				d.order_date if d.order_date else d.posting_date, d.creation, getdate(get_datetime(d.delivery_date)), 
+				date_diff(d.delivery_date or nowdate(),d.creation), d.territory	
 			])
 
 	return columns, data
@@ -41,7 +41,7 @@ def get_conditions(filters):
 		conditions.append("si.company=%(company)s")
 
 	if filters.get("from_date"):
-		conditions.append("date(si.creation) between %(from_date)s and %(to_date)s")
+		conditions.append("date(si.order_date) between %(from_date)s and %(to_date)s")
 
 	if filters.get("territory"):
 		conditions.append("si.territory=%(territory)s")

@@ -33,8 +33,8 @@ def get_data_keys():
 
 
 @frappe.whitelist()
-def upload_marketplace_order(data_import):
-	frappe.db.set_value("Data Import", data_import, "import_status", "In Progress", update_modified=False)
+def upload_marketplace_order(data_import, doctype="Data Import Legacy"):
+	frappe.db.set_value(doctype, data_import, "import_status", "In Progress", update_modified=False)
 	frappe.publish_realtime("data_import_progress", {"progress": "0",
 		"data_import": data_import, "reload": True}, user=frappe.session.user)
 
@@ -49,7 +49,7 @@ def upload_marketplace_order(data_import):
 @frappe.whitelist()
 def import_marketplace_orders(rows = None, submit_after_import=None, ignore_encoding_errors=False, no_email=True, overwrite=None,
 	update_only = None, ignore_links=False, pre_process=None, via_console=False, from_data_import="No",
-	skip_errors = True, data_import_doc=None, validate_template=False, user=None):
+	skip_errors = True, data_import_doc=None, validate_template=False, user=None, doctype="Data Import Legacy"):
 	"""upload data"""
 
 	# for translations
@@ -58,7 +58,7 @@ def import_marketplace_orders(rows = None, submit_after_import=None, ignore_enco
 		frappe.set_user_lang(user)
 
 	if data_import_doc and isinstance(data_import_doc, string_types):
-		data_import_doc = frappe.get_doc("Data Import", data_import_doc)
+		data_import_doc = frappe.get_doc(doctype, data_import_doc)
 	if data_import_doc and from_data_import == "Yes":
 		no_email = data_import_doc.no_email
 		ignore_encoding_errors = data_import_doc.ignore_encoding_errors

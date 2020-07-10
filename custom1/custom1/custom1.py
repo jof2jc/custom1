@@ -877,7 +877,7 @@ def get_last_rate_by_customer_so(customer,item_code):
 def get_last_rate_by_supplier(supplier,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabPurchase Invoice` si join `tabPurchase Invoice Item` si_item on si.name=si_item.parent
 		where si.docstatus=1 and supplier=%s and item_code=%s
-		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + supplier + "%"),item_code), as_dict=0)
+		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (supplier,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_last_rate_by_supplier_po(supplier,item_code):

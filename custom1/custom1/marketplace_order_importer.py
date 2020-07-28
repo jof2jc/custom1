@@ -43,7 +43,7 @@ def upload_marketplace_order(data_import, doctype="Data Import Legacy"):
 
 	if data_import not in enqueued_jobs:
 		enqueue(import_marketplace_orders, queue='default', timeout=6000, event='data_import', job_name=data_import,
-			data_import_doc=data_import, from_data_import="Yes", user=frappe.session.user)
+			data_import_doc=data_import, from_data_import="Yes", user=frappe.session.user,doctype=doctype)
 
 
 @frappe.whitelist()

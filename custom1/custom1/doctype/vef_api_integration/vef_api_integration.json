@@ -1,0 +1,229 @@
+{
+ "autoname": "field:client_id",
+ "creation": "2020-07-13 12:47:59.599444",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sc_01_section",
+  "title",
+  "provider_type",
+  "provider_name",
+  "main_url",
+  "sc_02_section",
+  "client_id",
+  "client_secret",
+  "basic_base_64_encoded",
+  "cb_90",
+  "generate_access_token",
+  "access_token",
+  "sc_03_section",
+  "api_key",
+  "api_secret",
+  "cb_09",
+  "shop_id",
+  "sc_04",
+  "timestamp",
+  "generate_signature",
+  "signature",
+  "headers",
+  "body",
+  "is_json",
+  "sc_8",
+  "url",
+  "method",
+  "try",
+  "result"
+ ],
+ "fields": [
+  {
+   "fieldname": "sc_01_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "provider_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Provider Type",
+   "options": "\nBank\nMarketplace\nWeb Services\nBusiness Apps",
+   "reqd": 1
+  },
+  {
+   "fieldname": "provider_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Provider Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sc_02_section",
+   "fieldtype": "Section Break",
+   "label": "OAUTH"
+  },
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Client ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Client Secret"
+  },
+  {
+   "bold": 1,
+   "fieldname": "basic_base_64_encoded",
+   "fieldtype": "Data",
+   "label": "Basic Base_64 Encoded"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "options": "{provider_name}-{client_id}",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "api_key",
+   "fieldtype": "Data",
+   "label": "API Key",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sc_03_section",
+   "fieldtype": "Section Break",
+   "label": "API Keys"
+  },
+  {
+   "fieldname": "api_secret",
+   "fieldtype": "Data",
+   "label": "API Secret"
+  },
+  {
+   "fieldname": "sc_04",
+   "fieldtype": "Section Break",
+   "label": "API PARAMETERS"
+  },
+  {
+   "fieldname": "headers",
+   "fieldtype": "Small Text",
+   "label": "Headers"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Small Text",
+   "label": "Body"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "Http Url Path"
+  },
+  {
+   "fieldname": "method",
+   "fieldtype": "Select",
+   "label": "Method",
+   "options": "GET\nPOST"
+  },
+  {
+   "fieldname": "try",
+   "fieldtype": "Button",
+   "label": "Try API Call"
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Code",
+   "label": "Result",
+   "read_only": 1
+  },
+  {
+   "fieldname": "main_url",
+   "fieldtype": "Data",
+   "label": "Main Host"
+  },
+  {
+   "fieldname": "cb_09",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "shop_id",
+   "fieldtype": "Data",
+   "label": "Shop ID (From Marketplace)"
+  },
+  {
+   "fieldname": "cb_90",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "generate_access_token",
+   "fieldtype": "Button",
+   "label": "Generate Access Token"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Data",
+   "label": "Access Token",
+   "read_only": 1
+  },
+  {
+   "fieldname": "generate_signature",
+   "fieldtype": "Button",
+   "label": "Generate Signature"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "label": "Signature",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "default": "0",
+   "fieldname": "is_json",
+   "fieldtype": "Check",
+   "label": "Convert body string to JSON object"
+  },
+  {
+   "fieldname": "sc_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "timestamp",
+   "fieldtype": "Data",
+   "label": "Timestamp"
+  }
+ ],
+ "modified": "2020-07-25 10:22:42.126830",
+ "modified_by": "Administrator",
+ "module": "Custom1",
+ "name": "VEF API Integration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

@@ -186,7 +186,7 @@ def si_after_save(self, method):
 				frappe.msgprint(_("Not picked items found. Changed order status = To Pick"))
 	
 		elif self.order_status == "Completed": 
-			if self.docstatus != 1:
+			if self.docstatus != 1 and not self.packing_end:
 				frappe.throw(_("Please make sure Pick and Pack is done properly. Cannot change to Completed manually"))
 
 		elif self.order_status == "Cancelled": 

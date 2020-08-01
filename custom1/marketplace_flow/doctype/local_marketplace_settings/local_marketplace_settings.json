@@ -5,7 +5,9 @@
  "engine": "InnoDB",
  "field_order": [
   "sc_01",
-  "ignore_insufficient_stock"
+  "ignore_insufficient_stock",
+  "ignore_courier_master_check",
+  "allow_submit_invoice_on_import"
  ],
  "fields": [
   {
@@ -19,10 +21,23 @@
    "fieldname": "ignore_insufficient_stock",
    "fieldtype": "Check",
    "label": "Ignore Insufficient Stock"
+  },
+  {
+   "default": "0",
+   "description": "If checked, system will use courier name from Marketplace as it is (plain text)",
+   "fieldname": "ignore_courier_master_check",
+   "fieldtype": "Check",
+   "label": "Ignore Courier Master Check"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_submit_invoice_on_import",
+   "fieldtype": "Check",
+   "label": "Allow Submit Invoice On Import"
   }
  ],
  "issingle": 1,
- "modified": "2020-07-06 13:59:33.275513",
+ "modified": "2020-08-01 11:34:06.281963",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Local Marketplace Settings",

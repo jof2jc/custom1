@@ -135,7 +135,7 @@ class PickItem(Document):
 
 
 @frappe.whitelist()
-def update_picked_item(awb_order_no, serial_batch_no, item_code):
+def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=0):
 	message=[0,0,0,"","",""] #order_qty, picked_qty, is_picked, error_msg, item_code, item_image_url
 	is_item_empty=True
 
@@ -208,7 +208,10 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code):
 				if d.qty > d.picked_qty and not d.is_picked and is_counted:
 					message[0]=d.qty
 
-					d.picked_qty += 1
+					if flt(total_item_qty) > 0 and flt(total_item_qty) <= d.qty:
+						d.picked_qty = flt(total_item_qty)
+					else:
+						d.picked_qty += 1
 
 					message[1] = d.picked_qty
 	

@@ -12,10 +12,7 @@ app_version = "0.0.1"
 
 fixtures = [    
 		{
-        		"doctype": "Property Setter",
-		        "filters": {
-        				"doc_type": ["in", ["Item"]]
-        		}
+        		"doctype": "Custom Script"
     		}
 ]
 

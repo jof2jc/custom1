@@ -180,6 +180,14 @@ def si_after_save(self, method):
 	if meta.has_field("awb_no") and meta.has_field("order_status"):
 		if not frappe.db.exists(self.doctype,{"name":self.name, "docstatus":0, "is_return":0}): return
 
+		if not self.no_online_order: #skip if not-online_order
+			self.order_status = ""
+			return 
+
+		if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+			if not frappe.get_value("Company", self.company,"apply_marketplace_workflow"):
+				return
+
 		if self.order_status == "To Pack": 
 			if frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
 				self.db_set("order_status","To Pick")
@@ -197,7 +205,7 @@ def si_after_save(self, method):
 
 		#doc = frappe.get_doc("Sales Invoice", self.name)
 		for d in self.items:
-			if d.is_picked and d.qty != d.picked_qty and d.qty != 0:
+			if (d.is_picked and d.qty != d.picked_qty) or (d.qty != d.picked_qty and d.qty != 0):
 				d.is_picked=0
 				frappe.throw(_("Please make sure Picked Qty is equal with Order Qty before change Is_Picked. Item: {0}".format(d.item_code)))
 
@@ -243,6 +251,10 @@ def si_validate(self, method):
 
 	if not is_online_shop: return
 
+	if not self.no_online_order: #skip if not-online_order
+		self.order_status = ""
+		return 
+
 	apply_marketplace_workflow = 0
 	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
 		apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
@@ -263,7 +275,7 @@ def si_validate(self, method):
 					temp = frappe.generate_hash()[:12].upper()
 					self.awb_no = temp #+ "-" + self.no_online_order[-5:]
 
-		calculate_mp_seller_discount(self)
+			calculate_mp_seller_discount(self)
 
 
 	if meta.has_field("awb_no") and meta.has_field("order_status"):
@@ -301,6 +313,8 @@ def si_before_submit(self, method):
 	#controller to set order_status
 	meta = frappe.get_meta(self.doctype)
 	if meta.has_field("awb_no") and meta.has_field("order_status") :
+		if not self.no_online_order:return #skip if not-online_order
+
 		from custom1.marketplace_flow.marketplace_flow import validate_mandatory
 		msg = validate_mandatory(self)
 		if msg: frappe.throw(msg)
@@ -315,7 +329,7 @@ def si_before_submit(self, method):
 			self.picked_and_packed = 1
 			self.order_status = "Completed"
 		elif self.is_return: self.order_status = ""
-		else:
+		elif apply_marketplace_workflow and not self.packing_end:
 			frappe.throw("Order status must be = To Pack and done Pack start-Pack end. {0} has invalid order status: {1}".format(self.name, self.order_status))
 
 
@@ -681,10 +695,11 @@ def si_before_insert(self, method):
 		if order_status:
 			if order_status.upper() in status_order or "SEDANG DIPROSES" in order_status.upper() or "SUDAH DIPROSES" in order_status.upper() or "DIPROSES PELAPAK" in order_status.upper():
 				#frappe.throw(_("Order Belum Diproses / Batal / Terkirim / Selesai: {0}").format(cstr(self.no_online_order)))
-				if "finnix" in get_site_name("finnix.vef-solution.com"):
-					self.order_status = "Pending"
-				else: 
-					self.order_status = "To Pick"
+				#if not apply_marketplace_workflow: #"finnix" in get_site_name("finnix.vef-solution.com"):
+				#	self.order_status = "Pending"
+				#else: 
+				self.order_status = "To Pick"
+
 				self.pending_remarks = order_status
 			else: 
 				self.order_status = "Pending"
@@ -703,8 +718,11 @@ def si_before_insert(self, method):
 						self.pending_remarks = "Status order dibatalkan"
 						break
 
+
 	#set marketplace_courier
-	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype): 
+	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype):
+		ignore_courier_master_check = frappe.db.get_single_value("Local Marketplace Settings","ignore_courier_master_check") or 0
+ 
 		courier = frappe.db.sql('''select name from `tabMarketplace Courier` where (name like %s or courier_name like %s or description like %s) limit 1''', 
 			(("%" + self.courier.strip() + "%"),("%" + self.courier.strip() + "%"),("%" + self.courier.strip() + "%")), as_dict=0)
 
@@ -716,7 +734,7 @@ def si_before_insert(self, method):
 
 			self.marketplace_courier = courier[0][0]
 			self.courier_type = values[1] or ""
-		else:
+		elif not ignore_courier_master_check:
 			frappe.throw(_("Marketplace Courier master not found using keyword '{0}'. Order No: {1}").format(self.courier, cstr(no_online_order)))
 
 

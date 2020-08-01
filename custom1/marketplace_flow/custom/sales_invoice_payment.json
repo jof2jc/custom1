@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Sales Invoice Payment",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2017-12-09 19:32:36.660169",
+   "default_value": null,
+   "doc_type": "Sales Invoice Payment",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "mode_of_payment",
+   "idx": 0,
+   "modified": "2017-12-09 19:32:36.660169",
+   "modified_by": "ceo@imp.com",
+   "name": "Sales Invoice Payment-mode_of_payment-width",
+   "owner": "ceo@imp.com",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "width",
+   "property_type": null,
+   "value": "45"
+  }
+ ],
+ "sync_on_migrate": 1
+}

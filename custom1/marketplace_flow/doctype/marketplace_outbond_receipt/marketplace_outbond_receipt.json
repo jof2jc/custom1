@@ -13,6 +13,7 @@
   "cb_9",
   "date",
   "sc_07",
+  "ignore_courier_master_check",
   "courier_references",
   "sc_02",
   "marketplace_courier",
@@ -210,10 +211,17 @@
    "fieldname": "additional_image",
    "fieldtype": "Attach Image",
    "label": "Additional Image"
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_courier_master_check",
+   "fieldtype": "Check",
+   "label": "Ignore Courier Master Check",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-06-24 14:36:59.963802",
+ "modified": "2020-08-02 08:04:11.353215",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Outbond Receipt",

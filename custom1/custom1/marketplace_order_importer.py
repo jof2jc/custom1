@@ -427,12 +427,15 @@ def import_marketplace_orders(rows = None, submit_after_import=None, ignore_enco
 						# check file url and create a File document
 						for file_url in attachments:
 							attach_file_to_doc(doc.doctype, doc.name, file_url)
-					if submit_after_import:
+
+					if submit_after_import and doc.doctype == "Sales Invoice":
 						if not doc.insufficient_stock:
 							doc.submit()
 						else:
 							doc.order_status = "Insufficient Stock"
 							doc.save()
+					elif submit_after_import:
+						doc.submit()
 
 				# log errors
 				if parentfield:

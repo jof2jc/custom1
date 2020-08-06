@@ -1,0 +1,66 @@
+{
+ "allow_rename": 1,
+ "autoname": "format:{score_label}-{score_type}",
+ "creation": "2020-08-06 12:36:08.465123",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "score_type",
+  "score_label",
+  "time_factor"
+ ],
+ "fields": [
+  {
+   "fieldname": "score_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Score Label",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "In Hours (up to this hours)",
+   "fieldname": "time_factor",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Time Factor",
+   "precision": "6",
+   "reqd": 1
+  },
+  {
+   "fieldname": "score_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Score Type",
+   "options": "\nFulfillment Admin\nPicker\nPacker\nOutbond",
+   "reqd": 1
+  }
+ ],
+ "modified": "2020-08-06 14:21:13.486959",
+ "modified_by": "Administrator",
+ "module": "Marketplace Flow",
+ "name": "Score Card Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _, scrub
 
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name, time_diff_in_hours
 from frappe.utils.dateutils import parse_date
 from frappe.model.naming import make_autoname
 import json
@@ -184,8 +184,10 @@ def si_after_save(self, method):
 			self.order_status = ""
 			return 
 
+		apply_marketplace_workflow = 0
 		if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
-			if not frappe.get_value("Company", self.company,"apply_marketplace_workflow"):
+			apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
+			if not apply_marketplace_workflow:
 				return
 
 		if self.order_status == "To Pack": 
@@ -205,7 +207,7 @@ def si_after_save(self, method):
 
 		#doc = frappe.get_doc("Sales Invoice", self.name)
 		for d in self.items:
-			if (d.is_picked and d.qty != d.picked_qty) or (d.qty != d.picked_qty and d.qty != 0):
+			if apply_marketplace_workflow and ((d.is_picked and d.qty != d.picked_qty) or (d.qty < d.picked_qty and d.qty != 0)):
 				d.is_picked=0
 				frappe.throw(_("Please make sure Picked Qty is equal with Order Qty before change Is_Picked. Item: {0}".format(d.item_code)))
 
@@ -750,6 +752,22 @@ def si_before_insert(self, method):
 
 		self.posting_time = nowtime() or get_time("23:59:00") #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
 		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
+		self.import_time = now_datetime()
+
+		''' insert marketplace scorecard '''
+		if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":self.name, "type":"Fulfillment Admin"}):
+			scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
+			scorecard.type = "Fulfillment Admin"
+			scorecard.transaction_ref_no = self.name
+			scorecard.time_start = self.order_date
+			scorecard.time_end = now_datetime()
+
+			hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
+			score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")
+			if score_list:
+				scorecard.score = score_list[0].name
+
+			scorecard.save()
 
 
 	if not frappe.db.get_value("Customer", self.customer, "name"):

@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, time_diff_in_hours
 from frappe.utils.dateutils import parse_date
 import json
 from custom1.marketplace_flow.marketplace_flow import validate_mandatory
@@ -109,6 +109,15 @@ class PackItem(Document):
 			if not doc.packing_start and doc.order_status in ("To Pack") and doc.docstatus == 0: 
 				doc.packing_start = now_datetime()
 				doc.save()
+
+				''' insert marketplace scorecard '''
+				if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}):
+					scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
+					scorecard.type = "Packer"
+					scorecard.transaction_ref_no = doc.name
+					scorecard.time_start = doc.packing_start
+					scorecard.insert()
+				
 				frappe.db.commit()
 			else:
 				self.status = '"%s" is already scanned start' % (doc.name)
@@ -133,6 +142,18 @@ class PackItem(Document):
 
 					doc.save()
 					doc.submit()
+
+					#update score_card time_end
+					if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}):
+						scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}) 
+						scorecard.time_end = doc.packing_end
+						hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
+
+						score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Packer"]],order_by="time_factor")
+						if score_list:
+							scorecard.score = score_list[0].name
+						scorecard.save()
+
 					frappe.db.commit()
 			
 					self.status = '"%s" is submitted successfully' % (doc.name)

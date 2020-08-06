@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, time_diff_in_hours
 from frappe.utils.dateutils import parse_date
 import json
 from custom1.marketplace_flow.marketplace_flow import validate_mandatory
@@ -146,6 +146,15 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 	''' get si item '''
 	if si:
 		doc = frappe.get_doc("Sales Invoice",cstr(si[0][0]))
+
+		if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
+			scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
+			scorecard.type = "Picker"
+			scorecard.transaction_ref_no = doc.name
+			scorecard.time_start = now_datetime()
+			scorecard.insert()
+			frappe.db.commit()
+
 		msg = validate_mandatory(doc) or ""
 		if msg:
 			message[3] = msg
@@ -208,7 +217,11 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 				if d.qty > d.picked_qty and not d.is_picked and is_counted:
 					message[0]=d.qty
 
-					if flt(total_item_qty) > 0 and flt(total_item_qty) <= d.qty:
+					if flt(total_item_qty) > 0 and flt(total_item_qty) > d.qty:
+						message[3] = "Error: Over Picked Qty. Please put <= " + cstr(d.qty)
+						return message
+
+					elif flt(total_item_qty) > 0 and flt(total_item_qty) <= d.qty:
 						d.picked_qty = flt(total_item_qty)
 					else:
 						d.picked_qty += 1
@@ -224,7 +237,16 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 						#check whether all items are packed then change status
 						if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
 							doc.order_status = "To Pack"
-						
+
+						if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
+							scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}) 
+							scorecard.time_end = now_datetime()
+							hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
+
+							score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Picker"]],order_by="time_factor")
+							if score_list:
+								scorecard.score = score_list[0].name
+							scorecard.save()
 	
 					doc.save()
 					frappe.db.commit()

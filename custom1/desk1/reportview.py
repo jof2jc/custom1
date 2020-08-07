@@ -207,23 +207,25 @@ def export_query():
 		if "PPN" in row[10].upper():
 			add_disc = flt(row[19]/100.0*row[17]) if row[19] else 0.0
 
-			dpp = round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2)
-			ppn = round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc),2) - round(flt(row[17]-add_disc)/1.1,2)
+			dpp = flt(row[17]-add_disc,2) if not row[7] else flt((row[17]-add_disc)/1.1,2)
+			#dpp = flt(row[17]-add_disc) if not row[7] else flt(row[17]-add_disc)/1.1
+			ppn = flt((row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc,2) - flt((row[17]-add_disc)/1.1,2),2)
+			#ppn = round(flt(row[17]-add_disc)*0.1,2) if not row[7] else round(flt(row[17]-add_disc) - (flt(row[17]-add_disc)/1.1),2)
 
-			total_dpp += flt(dpp)
-			total_ppn += flt(ppn)
+			total_dpp += flt(dpp,2)
+			total_ppn += flt(ppn,2)
 			
 			if i <= (len(ret)-1):
-				if i == (len(ret)-1):
-					if invoice_dpp != int(total_dpp):
-						dpp = flt(dpp) + round(flt(invoice_dpp)-flt(total_dpp),2)
-						if invoice_ppn != int(total_ppn):
-							ppn = flt(ppn) + round(flt(invoice_ppn)-flt(total_ppn),2)
-				elif row[0] != ret[i+1][0]:
-					if invoice_dpp != int(total_dpp):
-						dpp = flt(dpp) + round(flt(invoice_dpp)-flt(total_dpp),2)
-						if invoice_ppn != int(total_ppn):
-							ppn = flt(ppn) + round(flt(invoice_ppn)-flt(total_ppn),2)
+				if i == (len(ret)-1): #last_record
+					if invoice_dpp != flt(total_dpp,2):
+						dpp = round(flt(dpp) + flt(invoice_dpp)-flt(total_dpp),2)
+						if invoice_ppn != flt(total_ppn,2):
+							ppn = round(flt(ppn) + flt(invoice_ppn)-flt(total_ppn),2)
+				elif row[0] != ret[i+1][0]: #last_invoice
+					if invoice_dpp != flt(total_dpp,2):
+						dpp = round(flt(dpp) + flt(invoice_dpp)-flt(total_dpp),2)
+						if invoice_ppn != flt(total_ppn,2):
+							ppn = round(flt(ppn) + flt(invoice_ppn)-flt(total_ppn),2)
 			
 			data1.append(['OF',row[11],row[12],row[16],row[13],row[17],cstr(add_disc) or '0',#add-disc
 				dpp, #round(flt(row[17]-add_disc),2) if not row[7] else round(flt(row[17]-add_disc)/1.1,2), #dpp

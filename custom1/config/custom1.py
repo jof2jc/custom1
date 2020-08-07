@@ -28,8 +28,8 @@ def get_data():
 				},
 				{
 					"type": "report",
-					"name": "Stock Balance Summary",
-					"doctype": "testdoctype",
+					"name": "Stock Balance",
+					"doctype": "Stock Ledger Entry",
 					"is_query_report": True
 				},
 				{

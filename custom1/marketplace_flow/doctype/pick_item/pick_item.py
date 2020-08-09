@@ -224,7 +224,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 
 					elif flt(total_item_qty) > 0 and flt(total_item_qty) <= d.qty:
 						if frappe.db.get_value("Item", item_code, "has_serial_no"):
-							message[3] = "Error: Serialized Item must be scanned")
+							message[3] = "Error: Serialized Item must be scanned"
 							return message
 						else: 
 							d.picked_qty = flt(total_item_qty)

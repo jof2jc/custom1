@@ -163,7 +163,7 @@ def get_data():
 				{
 					"type": "report",
 					"is_query_report": True,
-					"name": "Stock Ledger",
+					"name": "Stock Ledger Detail",
 					"doctype": "Stock Ledger Entry",
 					"dependencies": ["Item"],
 				},

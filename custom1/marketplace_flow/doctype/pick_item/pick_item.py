@@ -147,7 +147,8 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 	if si:
 		doc = frappe.get_doc("Sales Invoice",cstr(si[0][0]))
 
-		if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
+		if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}) and \
+			frappe.get_list("Score Card Template",fields=["name"],filters=[["score_type","=","Picker"]]):
 			scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
 			scorecard.type = "Picker"
 			scorecard.transaction_ref_no = doc.name
@@ -222,7 +223,11 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 						return message
 
 					elif flt(total_item_qty) > 0 and flt(total_item_qty) <= d.qty:
-						d.picked_qty = flt(total_item_qty)
+						if frappe.db.get_value("Item", item_code, "has_serial_no"):
+							message[3] = "Error: Serialized Item must be scanned")
+							return message
+						else: 
+							d.picked_qty = flt(total_item_qty)
 					else:
 						d.picked_qty += 1
 
@@ -235,8 +240,10 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 						d.picked_time = now_datetime()
 
 						#check whether all items are packed then change status
-						if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
+						#if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
+						if not frappe.get_list("Sales Invoice Item", fields="name", filters = [["name","!=",d.name],["parent","=",doc.name],["is_picked", "=", "0"]]): 
 							doc.order_status = "To Pack"
+						doc.save()
 
 						if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
 							scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}) 
@@ -248,7 +255,6 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 								scorecard.score = score_list[0].name
 							scorecard.save()
 	
-					doc.save()
 					frappe.db.commit()
 
 					return message

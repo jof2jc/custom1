@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from frappe import _
+import frappe
 
 def get_data():
 	return [
@@ -9,7 +10,7 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
-					"name": "Data Import Legacy",
+					"name": "Data Import Legacy" if frappe.db.table_exists("Data Import Legacy") else "Data Import",
 					"label": _("Import Online Order"),
 					"onboard": 1
 				},
@@ -125,6 +126,11 @@ def get_data():
 					"link": "Tree/Warehouse",
 					"onboard": 1,
 				},
+				{
+					"type": "doctype",
+					"label": _("Score Card Template"),
+					"onboard": 1,
+				},
 			]
 		},
 		{
@@ -151,6 +157,38 @@ def get_data():
 					"type": "report",
 					"name": "Marketplace Return Sheet",
 					"doctype": "Marketplace Return",
+					"onboard": 1
+				},
+				{
+					"type": "report",
+					"name": "Fulfillment Score Card Report",
+					"doctype": "Marketplace Fulfillment Score Card",
+					"onboard": 1
+				},
+			]
+		},
+		{
+			"label": _("Reports"),
+			"items": [
+				{
+					"type": "report",
+					"name": "Item Summary",
+					"doctype": "Stock Ledger Entry",
+					"is_query_report": True,
+					"dependencies": ["Item"]
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Stock Ledger Detail",
+					"doctype": "Stock Ledger Entry",
+					"dependencies": ["Item"],
+				},
+				{
+					"type": "report",
+					"name": "AWB",
+					"doctype": "Sales Invoice",
+					"is_query_report": True,
 					"onboard": 1
 				},
 			]

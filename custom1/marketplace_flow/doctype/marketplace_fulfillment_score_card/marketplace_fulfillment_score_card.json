@@ -2,7 +2,6 @@
  "autoname": "naming_series:",
  "creation": "2020-08-05 18:20:27.127408",
  "doctype": "DocType",
- "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -22,11 +21,11 @@
   },
   {
    "fieldname": "transaction_ref_no",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Transaction Ref No",
-   "options": "Sales Invoice",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -35,6 +34,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Time Start",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -42,7 +42,8 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Time End"
+   "label": "Time End",
+   "read_only": 1
   },
   {
    "bold": 1,
@@ -51,7 +52,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Score",
-   "options": "Score Card Template"
+   "options": "Score Card Template",
+   "read_only": 1
   },
   {
    "fieldname": "type",
@@ -60,10 +62,11 @@
    "in_standard_filter": 1,
    "label": "Type",
    "options": "\nFulfillment Admin\nPicker\nPacker\nOutbond",
+   "read_only": 1,
    "reqd": 1
   }
  ],
- "modified": "2020-08-06 15:12:52.753468",
+ "modified": "2020-08-06 23:02:05.002070",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Fulfillment Score Card",

@@ -297,6 +297,22 @@ def si_validate(self, method):
 				elif [mr for mr in frappe.get_list("Marketplace Return Item", fields="parent", filters = [["parent","=",d.marketplace_return], ["sales_invoice","=",d.item_invoice], ["item_code","=",d.item_code], ["name","=",d.ref_item_name], ["qty","!=",abs(d.qty)]]) if mr]:
 					frappe.throw(_("Row {0}. Qty is different from Marketplace Return Qty: {1}".format(d.idx, d.marketplace_return)))
 
+	''' insert marketplace scorecard '''
+	if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":self.name, "type":"Fulfillment Admin"}) and \
+		frappe.get_list("Score Card Template",fields=["name"],filters=[["score_type","=","Fulfillment Admin"]]):
+		scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
+		scorecard.type = "Fulfillment Admin"
+		scorecard.transaction_ref_no = self.name
+		scorecard.time_start = self.order_date
+		scorecard.time_end = now_datetime()
+
+		hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
+		score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")
+		if score_list:
+			scorecard.score = score_list[0].name
+		scorecard.insert()
+
+
 def si_before_submit(self, method):
 	if "no_online_order" in frappe.db.get_table_columns(self.doctype) and "is_online_shop" in frappe.db.get_table_columns("Company"):
 		if self.no_online_order:
@@ -748,26 +764,12 @@ def si_before_insert(self, method):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
 		if "order_date" in frappe.db.get_table_columns(self.doctype):
-			self.order_date = cstr(getdate(cstr(self.posting_date))) #self.posting_date
+			order_datetime = get_datetime(cstr(self.posting_date))
+			self.order_date = order_datetime #cstr(getdate(cstr(self.posting_date)))
 
 		self.posting_time = nowtime() or get_time("23:59:00") #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
 		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
 		self.import_time = now_datetime()
-
-		''' insert marketplace scorecard '''
-		if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":self.name, "type":"Fulfillment Admin"}):
-			scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
-			scorecard.type = "Fulfillment Admin"
-			scorecard.transaction_ref_no = self.name
-			scorecard.time_start = self.order_date
-			scorecard.time_end = now_datetime()
-
-			hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
-			score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")
-			if score_list:
-				scorecard.score = score_list[0].name
-
-			scorecard.save()
 
 
 	if not frappe.db.get_value("Customer", self.customer, "name"):

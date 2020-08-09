@@ -111,7 +111,8 @@ class PackItem(Document):
 				doc.save()
 
 				''' insert marketplace scorecard '''
-				if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}):
+				if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}) and \
+					frappe.get_list("Score Card Template",fields=["name"],filters=[["score_type","=","Packer"]]):
 					scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
 					scorecard.type = "Packer"
 					scorecard.transaction_ref_no = doc.name

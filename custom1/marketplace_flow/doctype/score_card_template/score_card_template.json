@@ -18,8 +18,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Score Label",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "description": "In Hours (up to this hours)",
@@ -40,7 +39,7 @@
    "reqd": 1
   }
  ],
- "modified": "2020-08-06 14:21:13.486959",
+ "modified": "2020-08-06 21:55:01.211088",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Score Card Template",

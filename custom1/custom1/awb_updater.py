@@ -11,7 +11,7 @@ from frappe.utils.data import format_datetime, cstr, flt
 from frappe.utils.csvutils import getlink
 
 from frappe.utils import get_files_path
-from frappe.core.doctype.data_import.importer import upload
+#from frappe.core.doctype.data_import.importer import upload
 from frappe.utils.background_jobs import enqueue
 import json
 
@@ -28,8 +28,8 @@ from pdfminer.pdfinterp import resolve1
 
 
 @frappe.whitelist()
-def update_awb(data_import):
-	frappe.db.set_value("Data Import", data_import, "import_status", "In Progress", update_modified=False)
+def update_awb(data_import, doctype="Data Import Legacy"):
+	frappe.db.set_value(doctype, data_import, "import_status", "In Progress", update_modified=False)
 	frappe.publish_realtime("data_import_progress", {"progress": "0",
 		"data_import": data_import, "reload": True}, user=frappe.session.user)
 
@@ -40,19 +40,19 @@ def update_awb(data_import):
 		#enqueue(execute_update_awb(data_import), queue='default', timeout=1000, job_name=data_import,
 		#	data_import_doc=data_import, user=frappe.session.user)
 		enqueue(execute_update_awb, queue='default', timeout=1000, event='data_import', job_name=data_import,
-			data_import_doc=data_import, from_data_import="Yes", user=frappe.session.user)
+			data_import_doc=data_import, from_data_import="Yes", user=frappe.session.user, doctype=doctype)
 
 
 def execute_update_awb(rows = None, submit_after_import=None, ignore_encoding_errors=False, no_email=True, overwrite=None,
 	update_only = None, ignore_links=False, pre_process=None, via_console=False, from_data_import="No",
-	skip_errors = True, data_import_doc=None, validate_template=False, user=None):
+	skip_errors = True, data_import_doc=None, validate_template=False, user=None, doctype="Data Import Legacy"):
 
 	error_flag = rollback_flag = False
 	data = data_with_error = []
 	import_Status = ""
 	total=0
 
-	data_import_doc = frappe.get_doc("Data Import", data_import_doc)
+	data_import_doc = frappe.get_doc(doctype, data_import_doc)
 
 	import_log = []
 	def log(**kwargs):

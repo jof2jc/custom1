@@ -2,7 +2,7 @@
 erpnext.SerialNoBatchSelector = Class.extend({
 	init: function(opts, show_dialog) {
 		$.extend(this, opts);
-		// this.show_dialog = show_dialog;
+		this.show_dialog = show_dialog;
 		// frm, item, warehouse_details, has_batch, oldest
 		let d = this.item;
 		this.has_batch = 0; this.has_serial_no = 0;
@@ -10,15 +10,15 @@ erpnext.SerialNoBatchSelector = Class.extend({
 		if (d && d.has_batch_no && (!d.batch_no || this.show_dialog)) this.has_batch = 1;
 		// !(this.show_dialog == false) ensures that show_dialog is implictly true, even when undefined
 		if(d && d.has_serial_no && !(this.show_dialog == false)) this.has_serial_no = 1;
-
-		// this.setup();
+		
+		if (this.has_batch || this.has_serial_no) this.setup();
 	},
 
 	setup: function() {
 		this.item_code = this.item.item_code;
 		this.qty = this.item.qty;
-		// this.make_dialog();
-		// this.on_close_dialog();
+		this.make_dialog();
+		this.on_close_dialog();
 	},
 
 	make_dialog: function() {
@@ -124,7 +124,7 @@ erpnext.SerialNoBatchSelector = Class.extend({
 			fields: fields
 		});
 
-		this.dialog.set_primary_action(__('Insertkkkkk'), function() {
+		this.dialog.set_primary_action(__('Insert'), function() {
 			me.values = me.dialog.get_values();
 			if(me.validate()) {
 				frappe.run_serially([

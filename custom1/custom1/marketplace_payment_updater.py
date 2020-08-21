@@ -11,7 +11,6 @@ from frappe.utils.data import format_datetime, cstr, flt
 from frappe.utils.csvutils import getlink
 
 from frappe.utils import get_files_path
-from frappe.core.doctype.data_import.importer import upload
 from frappe.utils.background_jobs import enqueue
 import json
 
@@ -121,9 +120,13 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 			for idx, d in enumerate(row,1):
 				is_finish=0
 				for mpm in customer_doc.marketplace_payment_mapper:
+					if mpm.order_no_col_idx and mpm.order_no_col_idx == idx and not val[0] and d: #if order_no_col_idx is specified
+						val[0] = cstr(d)
+						val[2] = mpm.type
+						val[3] = mpm.amount_column_index
 
 					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword.strip())
-					if len(s) > 1: #mapper matched
+					if len(s) > 1 and not val[0]: #keywords mapper matched
 						try:
 							if not val[0]:
 								val[0] = s[1].split('$')[0].strip()
@@ -193,7 +196,9 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 
 	#calculate paid amount and deductions if over paid
 	if data_import_doc.references:
+		data_import_doc.difference_amount = 0
 		data_import_doc.paid_amount = sum(d.ordered_amount for d in data_import_doc.references if d.ordered_amount)
+		data_import_doc.received_amount = data_import_doc.paid_amount
 		total_allocated = sum(d.allocated_amount for d in data_import_doc.references if d.allocated_amount)
 
 		if data_import_doc.paid_amount > total_allocated:

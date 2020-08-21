@@ -27,3 +27,17 @@ frappe.Application.prototype.show_update_available = function () {
 		});
 	}
 }
+erpnext.show_serial_batch_selector = function(frm, d, callback, on_close, show_dialog) {
+	frappe.require("assets/custom1/js/serial_no_batch_selector.js", function() {
+		new erpnext.SerialNoBatchSelector({
+			frm: frm,
+			item: d,
+			warehouse_details: {
+				type: "Warehouse",
+				name: d.warehouse
+			},
+			callback: callback,
+			on_close: on_close
+		}, show_dialog);
+	});
+}

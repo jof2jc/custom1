@@ -236,10 +236,10 @@ def calculate_mp_seller_discount(self):
 			seller_discount_per_item = total_seller_discount / (len(self.items) or 1)
 
 def update_seller_notes(self):
-	if not frappe.get_meta("Marketplace CSO"):
+	if not frappe.get_meta("Marketplace CSO") or not frappe.get_value("Company", self.company,"apply_marketplace_workflow"):
 		return
 
-	if frappe.get_list("Marketplace CSO",{"name":self.no_online_order.strip(), "status":("not in", ["Completed","Cancelled"]),"sales_invoice":""}):
+	if frappe.get_all("Marketplace CSO",{"name":self.no_online_order.strip(), "status":("not in", ["Completed","Cancelled"]),"sales_invoice":""}):
 		cso = frappe.get_doc("Marketplace CSO", self.no_online_order.strip())
 		if cso:
 			if cso.seller_notes:
@@ -299,7 +299,7 @@ def si_validate(self, method):
 
 	''' insert marketplace scorecard '''
 	if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":self.name, "type":"Fulfillment Admin"}) and \
-		frappe.get_list("Score Card Template",fields=["name"],filters=[["score_type","=","Fulfillment Admin"]]):
+		frappe.get_all("Score Card Template",fields=["name"],filters=[["score_type","=","Fulfillment Admin"]]):
 		scorecard = frappe.new_doc("Marketplace Fulfillment Score Card")
 		scorecard.type = "Fulfillment Admin"
 		scorecard.transaction_ref_no = self.name
@@ -310,7 +310,7 @@ def si_validate(self, method):
 		score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")
 		if score_list:
 			scorecard.score = score_list[0].name
-		scorecard.insert()
+		scorecard.insert(ignore_permissions=True)
 
 
 def si_before_submit(self, method):
@@ -716,6 +716,10 @@ def si_before_insert(self, method):
 				#if not apply_marketplace_workflow: #"finnix" in get_site_name("finnix.vef-solution.com"):
 				#	self.order_status = "Pending"
 				#else: 
+				if apply_marketplace_workflow:
+					self.order_status = "To Pick"
+				else: self.order_status = "Pending"
+
 				self.order_status = "To Pick"
 
 				self.pending_remarks = order_status
@@ -738,7 +742,7 @@ def si_before_insert(self, method):
 
 
 	#set marketplace_courier
-	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype):
+	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype) and self.courier:
 		ignore_courier_master_check = frappe.db.get_single_value("Local Marketplace Settings","ignore_courier_master_check") or 0
  
 		courier = frappe.db.sql('''select name from `tabMarketplace Courier` where (name like %s or courier_name like %s or description like %s) limit 1''', 
@@ -919,7 +923,7 @@ def si_before_insert(self, method):
 
 
 	#set courier_type
-	if "courier_type" in frappe.db.get_table_columns(self.doctype):
+	if "courier_type" in frappe.db.get_table_columns(self.doctype) and self.courier:
 		if "GRAB" in self.courier.upper() or "GOJEK" in self.courier.upper() or "GO-JEK" in self.courier.upper():
 			self.courier_type = "Same Day"
 		else: self.courier_type = "Regular"

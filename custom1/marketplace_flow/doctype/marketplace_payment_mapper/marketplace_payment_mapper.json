@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "type",
+  "order_no_col_idx",
   "keyword",
   "amount_column_index"
  ],
@@ -29,16 +30,24 @@
   },
   {
    "bold": 1,
-   "columns": 3,
+   "columns": 2,
    "description": "Start from 1",
    "fieldname": "amount_column_index",
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Amount Col Index (start from 1)"
+  },
+  {
+   "bold": 1,
+   "columns": 2,
+   "fieldname": "order_no_col_idx",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Order No Col Index (start from 1)"
   }
  ],
  "istable": 1,
- "modified": "2020-05-19 08:43:43.206842",
+ "modified": "2020-08-15 11:23:24.750493",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Marketplace Payment Mapper",

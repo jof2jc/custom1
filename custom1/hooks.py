@@ -258,7 +258,7 @@ scheduler_events = {
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-override_whitelisted_methods = {
- 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "custom1.custom1.custom1.get_outstanding_reference_documents2"
-}
+#override_whitelisted_methods = {
+# 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "custom1.custom1.custom1.get_outstanding_reference_documents2"
+#}
 

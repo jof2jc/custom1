@@ -117,6 +117,7 @@ class PackItem(Document):
 					scorecard.type = "Packer"
 					scorecard.transaction_ref_no = doc.name
 					scorecard.time_start = doc.packing_start
+					scorecard.ignore_permissions = True
 					scorecard.insert()
 				
 				frappe.db.commit()
@@ -153,6 +154,7 @@ class PackItem(Document):
 						score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Packer"]],order_by="time_factor")
 						if score_list:
 							scorecard.score = score_list[0].name
+						scorecard.ignore_permissions = True
 						scorecard.save()
 
 					frappe.db.commit()

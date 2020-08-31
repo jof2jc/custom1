@@ -720,7 +720,8 @@ def si_before_insert(self, method):
 					self.order_status = "To Pick"
 				else: self.order_status = "Pending"
 
-				self.order_status = "To Pick"
+				if "FINNIX" in company.upper():
+					self.order_status = "Pending"
 
 				self.pending_remarks = order_status
 			else: 
@@ -853,6 +854,7 @@ def si_before_insert(self, method):
 							frappe.throw(_("Insufficient Stock {0} > {1} for item : {2} in Warehouse {3}").format(cstr(d.qty),cstr(stock_balance),d.item_code,d.warehouse))
 						elif ignore_insufficient_stock: 
 							self.insufficient_stock = ignore_insufficient_stock
+							self.order_status = "Insufficient Stock"
 
 				elif is_stock_item and not warehouse:
 					frappe.throw(_("Warehouse not found for item : {0}").format(d.item_code))

@@ -153,6 +153,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 			scorecard.type = "Picker"
 			scorecard.transaction_ref_no = doc.name
 			scorecard.time_start = now_datetime()
+			scorecard.ignore_permissions = True
 			scorecard.insert()
 			frappe.db.commit()
 
@@ -253,6 +254,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 							score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Picker"]],order_by="time_factor")
 							if score_list:
 								scorecard.score = score_list[0].name
+							scorecard.ignore_permissions = True
 							scorecard.save()
 	
 					frappe.db.commit()

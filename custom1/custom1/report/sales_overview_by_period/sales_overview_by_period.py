@@ -19,7 +19,7 @@ def execute(filters=None):
 
 	group_wise_columns = frappe._dict({
 		"invoice": ["parent", "sales_person", "customer", "customer_group", "territory","posting_date","item_code","item_name","item_group", "brand", \
-			"warehouse", "qty", "uom","base_amount"],
+			"warehouse", "qty", "uom","base_amount","base_item_amount"],
 		"item_code": ["item_code", "item_name", "item_group", "brand", "qty","base_amount"],
 		"warehouse": ["warehouse", "qty","base_amount"],
 		"territory": ["territory", "qty","base_amount"],
@@ -59,7 +59,8 @@ def get_columns(group_wise_columns, filters):
 		"uom": _("UOM") + ":Link/UOM:70",
 		"base_rate": _("Avg. Selling Rate") + ":Currency/currency",
 		"buying_rate": _("Avg. Buying Rate") + ":Currency/currency",
-		"base_amount": _("Selling Amount") + ":Currency/currency:120",
+		"base_amount": _("Net Sales") + ":Currency/currency:120",
+		"base_item_amount": _("Total") + ":Currency/currency:120",
 		"buying_amount": _("Buying Amount") + ":Currency/currency",
 		"gross_profit": _("Gross Profit") + ":Currency/currency",
 		"gross_profit_percent": _("Gross Profit %") + ":Percent",
@@ -112,6 +113,7 @@ class GrossProfitGenerator(object):
 				continue
 
 			row.base_amount = flt(row.base_net_amount)
+			row.base_item_amount = flt(row.base_item_amount)
 			
 			#get allocated payments	
 			if self.payments.get(row.parent) or self.pos_payments.get(row.parent):
@@ -419,7 +421,7 @@ class GrossProfitGenerator(object):
 				`tabSales Invoice Item`.warehouse, `tabItem`.item_group,
 				`tabSales Invoice Item`.brand, `tabSales Invoice Item`.dn_detail,
 				`tabSales Invoice Item`.delivery_note, `tabSales Invoice Item`.stock_qty as qty, `tabSales Invoice Item`.stock_uom as uom,
-				`tabSales Invoice Item`.base_net_rate, `tabSales Invoice Item`.base_net_amount,
+				`tabSales Invoice Item`.base_net_rate, `tabSales Invoice Item`.base_net_amount,`tabSales Invoice Item`.base_amount as base_item_amount,
 				`tabSales Invoice Item`.name as "item_row", `tabSales Invoice`.is_return, 0.0 as paid_amount, 0.0 as paid_factor
 				{sales_person_cols}
 			from

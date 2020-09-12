@@ -780,6 +780,15 @@ def si_before_insert(self, method):
 	if not frappe.db.get_value("Customer", self.customer, "name"):
 		frappe.throw(_("Customer {0} not found").format(self.customer))
 
+	''' map buyer_id or user_id with master customer '''
+	if "marketplace_phone_no" in frappe.db.get_table_columns("Customer") and self.recipient_number:
+		customer = frappe.db.get_value("Customer", {"marketplace_phone_no":self.recipient_number}, "name")
+		if customer: self.customer = customer
+
+	if "marketplace_user_id" in frappe.db.get_table_columns("Customer") and self.buyer_id:
+		customer = frappe.db.get_value("Customer", {"marketplace_user_id":self.buyer_id}, "name")
+		if customer: self.customer = customer
+
 	if not self.selling_price_list:
 		self.selling_price_list = frappe.db.get_value("Customer", {"name":self.customer}, "default_price_list") #"Price 1"
 		if not self.selling_price_list:

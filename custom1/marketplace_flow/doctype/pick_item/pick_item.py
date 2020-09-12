@@ -171,6 +171,20 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 		if sku:
 			item_code =  cstr(sku[0][0]) or item_code or ""
 
+		''' check if bundled item '''
+		total_bundle_qty = 0
+		product_bundle_item = frappe.db.sql('''select bundle.parent from `tabSales Invoice Item` si_item 
+			join `tabProduct Bundle Item` bundle on si_item.item_code=bundle.parent join `tabItem` it on bundle.item_code=it.item_code
+			where it.disabled=0 and it.is_stock_item=1 and si_item.parent=%s and bundle.item_code=%s limit 1''', (doc.name, item_code), as_dict=0)
+
+		if product_bundle_item: 
+			product_bundle_item = cstr(product_bundle_item[0][0]) or ""
+
+			total_bundle_qty = frappe.db.sql('''select sum(bundle.qty) as qty from `tabSales Invoice Item` si_item 
+				join `tabProduct Bundle Item` bundle on si_item.item_code=bundle.parent join `tabItem` it on bundle.item_code=it.item_code
+				where it.disabled=0 and it.is_stock_item=1 and si_item.parent=%s and bundle.parent=%s''', (doc.name, product_bundle_item), as_dict=0)
+			if total_bundle_qty: total_bundle_qty = flt(total_bundle_qty[0][0]) or 0.0
+
 		if item_code:
 			#image_url = frappe.db.get_value("File",{"attached_to_name": item_code},"thumbnail_url") or ""
 			image_url = frappe.db.get_value("Item", item_code, "image") or ""
@@ -178,10 +192,10 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 			if image_url: message[5] = image_url
 
 		for d in doc.items:
-			if d.item_code == item_code:
+			if d.item_code == item_code or product_bundle_item:
 				is_item_empty = False
 				is_counted = 1
-				message[4] = d.item_code
+				message[4] = item_code
 
 				if not d.warehouse:
 					d.warehouse = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
@@ -197,6 +211,9 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 
 						if (len(serial_list) < d.qty and serial_batch_no.strip() not in serial_list) and serial_nos:
 							d.serial_no = cstr(d.serial_no) + serial_nos[0].name + "\n"
+						elif (len(serial_list) < d.qty and serial_batch_no.strip() in serial_list) and serial_nos:
+							message[3] = 'Failed: Serial "%s" was entered already' % (serial_batch_no) 
+							return message
 						elif len(serial_list) >= d.qty:
 							is_counted = 0 
 						elif item_code != serial_batch_no: 
@@ -205,7 +222,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 
 					if frappe.db.get_value("Item", item_code, "has_batch_no"):
 						from erpnext.stock.doctype.batch.batch import get_batch_qty
-						batch_qty = get_batch_qty(serial_batch_no.strip(), d.warehouse, d.item_code) or 0.0
+						batch_qty = get_batch_qty(serial_batch_no.strip(), d.warehouse, item_code) or 0.0
 						batch_id = frappe.db.get_value("Batch", {"name":serial_batch_no.strip(), "disabled":0}, "batch_id") or ""
 						if batch_qty >= d.qty and batch_id:
 							d.batch_no = batch_id
@@ -230,11 +247,14 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 						else: 
 							d.picked_qty = flt(total_item_qty)
 					else:
-						d.picked_qty += 1
+						if total_bundle_qty:
+							d.picked_qty = d.picked_qty + flt(1.0/(total_bundle_qty * d.qty))
+						else: d.picked_qty += 1
 
 					message[1] = d.picked_qty
 	
-					if d.picked_qty == d.qty:
+					if (d.picked_qty == d.qty) or (abs(d.qty - d.picked_qty) < 0.04 and d.picked_qty > 0):
+						d.picked_qty = d.qty
 						d.is_picked = 1
 						message[2] = d.is_picked
 						message[3] = "Completed"
@@ -244,7 +264,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 						#if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
 						if not frappe.get_list("Sales Invoice Item", fields="name", filters = [["name","!=",d.name],["parent","=",doc.name],["is_picked", "=", "0"]]): 
 							doc.order_status = "To Pack"
-						doc.save()
+						#doc.save()
 
 						if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
 							scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}) 
@@ -257,6 +277,7 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 							scorecard.ignore_permissions = True
 							scorecard.save()
 	
+					doc.save()
 					frappe.db.commit()
 
 					return message

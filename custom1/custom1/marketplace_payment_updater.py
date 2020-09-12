@@ -173,7 +173,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 								is_exists = 1
 								r.ordered_amount = flt(r.ordered_amount) + received_amount
 								total_allocated = r.allocated_amount + received_amount
-								r.allocated_amount = total_allocated if total_allocated <= inv.outstanding_amount else inv.outstanding_amount
+								r.allocated_amount = inv.outstanding_amount #total_allocated if total_allocated <= inv.outstanding_amount else inv.outstanding_amount
 								break
 
 					if inv and not is_exists:	
@@ -186,7 +186,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 								"total_amount": inv.grand_total,
 								"outstanding_amount": inv.outstanding_amount,
 								"ordered_amount": received_amount or 0,
-								"allocated_amount": received_amount if received_amount <= inv.outstanding_amount else inv.outstanding_amount
+								"allocated_amount": inv.outstanding_amount #received_amount if received_amount <= inv.outstanding_amount else inv.outstanding_amount
 							})
 					is_finish=1
 					break
@@ -201,7 +201,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 		data_import_doc.received_amount = data_import_doc.paid_amount
 		total_allocated = sum(d.allocated_amount for d in data_import_doc.references if d.allocated_amount)
 
-		if data_import_doc.paid_amount > total_allocated:
+		if flt(data_import_doc.paid_amount) != flt(total_allocated):
 			marketplace_fee_account = frappe.get_value("Account",{"account_type":"Expense Account","disabled":0,"is_marketplace_fee_account":1},"name") or ""
 
 			data_import_doc.deductions = []

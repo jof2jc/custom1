@@ -79,6 +79,11 @@ def get_data():
 				},
 				{
 					"type": "doctype",
+					"name": "Item Price",
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"label": _("Item Group"),
 					"link": "Tree/Item Group",
 					"onboard": 1,

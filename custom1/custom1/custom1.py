@@ -846,8 +846,12 @@ def si_before_insert(self, method):
 						frappe.throw(_("Harga kosong untuk item : {0}, Order ID: {1}").format(d.item_code,self.no_online_order))
 
 				from erpnext.stock.utils import get_stock_balance
+				warehouse = ""
+				if "marketplace_warehouse" in frappe.db.get_table_columns("Customer"):
+					warehouse = frappe.db.get_value("Customer", {"name":self.customer}, "marketplace_warehouse") or ""
 
-				warehouse = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
+				if not warehouse:
+					warehouse = frappe.db.get_value("User Permission", {"user":frappe.session.user, "allow":"Warehouse"}, "for_value") or \
 						frappe.db.get_single_value('Stock Settings', 'default_warehouse') or ""
 
 				is_stock_item = frappe.db.get_value("Item", {"name":d.item_code}, "is_stock_item")

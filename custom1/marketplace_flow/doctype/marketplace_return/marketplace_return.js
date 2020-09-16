@@ -473,6 +473,149 @@ frappe.ui.form.on('Marketplace Return', {
 		});
 	},
 
+	make_new_purchase_invoice: function(frm){
+		//var me = this.frm;
+		if (frm.is_dirty() || frm.doc.docstatus < 1){
+			frappe.msgprint({message: 'Please save and approve document first', title: __('Message'), indicator:'blue'}); return;
+		}
+		this.data = [];
+
+		var dialog = new frappe.ui.Dialog({
+			title: __("Receive New Items from Supplier (New Purchase Invoice)"),
+			fields: [
+				{"fieldtype": "Link", "label": __("Select a Supplier"), "fieldname": "supplier", "options":"Supplier",
+					"description": "Please make sure you have made Purchase Return first",
+					"get_query": function () {
+						return {
+							query:"custom1.marketplace_flow.doctype.marketplace_return.marketplace_return.get_supplier",
+							filters: {'parent': frm.doc.name}
+						}
+					}
+				},
+				{fieldname: 'items_for_si', fieldtype: 'Table', label: 'Select Items',
+					fields: [
+						{
+							fieldtype:'Data',
+							fieldname:'purchase_return_no',
+							label: __('Purchase Return No'),
+							read_only:1,
+							in_list_view:1
+						},
+						{
+							fieldtype:'Data',
+							fieldname:'sales_invoice',
+							label: __('Order ID'),
+							read_only:1,
+							in_list_view:1
+						},
+						{
+							fieldtype:'Data',
+							fieldname:'item_code',
+							label: __('Item'),
+							read_only:1,
+							in_list_view:1
+						},
+						{
+							fieldtype:'Data',
+							fieldname:'item_name',
+							label: __('Item name'),
+							read_only:1
+						},
+						{
+							fieldtype:'Float',
+							fieldname:'qty',
+							label: __('Quantity'),
+							read_only: 1,
+							in_list_view:1
+						},
+						{
+							fieldtype:'Link',
+							read_only:1,
+							fieldname:'uom',
+							label: __('UOM')
+						},
+						{
+							fieldtype:'Small Text',
+							read_only:1,
+							fieldname:'serial_no',
+							label: __('Serial No'),
+						},
+						{
+							fieldtype:'Link',
+							read_only:1,
+							fieldname:'batch_no',
+							label: __('Batch No')
+						}
+					],
+					data: this.data,
+					get_data: function() {
+						return this.data;
+
+					}
+				},
+
+				{"fieldtype": "Button", "label": __('Make Purchase Invoice For New Items'), "fieldname": "make_new_purchase_invoice", "cssClass": "btn-primary"},
+			]
+		});
+
+		dialog.fields_dict.make_new_purchase_invoice.$input.click(function() {
+			var args = dialog.get_values();
+			let selected_items = dialog.fields_dict.items_for_si.grid.get_selected_children()
+			if(selected_items.length == 0) {
+				frappe.throw({message: 'Please select Item from Table', title: __('Message'), indicator:'blue'})
+			} else if (!args.supplier) frappe.throw({message: 'Please set a Supplier', title: __('Message'), indicator:'blue'})
+
+			let selected_items_list = []
+			for(let i in selected_items){
+				selected_items_list.push(selected_items[i].item_code)
+			}
+			dialog.hide();
+			return frappe.call({
+				type: "GET",
+				method: "custom1.marketplace_flow.doctype.marketplace_return.marketplace_return.make_new_purchase_invoice",
+				args: {
+					"source_name": me.frm.doc.name,
+					"for_supplier": args.supplier,
+					"selected_items": selected_items_list
+				},
+				freeze: true,
+				callback: function(r) {
+					if(!r.exc) {
+						// var args = dialog.get_values();
+						if (args.supplier){
+							var doc = frappe.model.sync(r.message);
+							frappe.set_route("Form", r.message.doctype, r.message.name);
+						}
+						else{
+							
+						}
+					}
+				}
+			})
+		});
+		dialog.get_field("items_for_si").grid.only_sortable()
+		dialog.get_field("items_for_si").refresh()
+		dialog.show();
+
+		//filter dialog table
+		dialog.fields_dict.supplier.$input.on('input change select paste keyup click', function() {
+			console.log('filter supplier on_change..');
+			var args = dialog.get_values();
+			this.data = dialog.fields_dict.items_for_si.df.data = [];
+
+			frm.doc.items.forEach(function(item) {
+				//console.log('item.replacement_invoice = ' + item.replacement_invoice);
+				//console.log('args.sales_invoice = ' + args.sales_invoice);
+				if (item.sales_invoice && item.sales_return_no && !item.purchase_invoice && item.supplier == args.supplier) 
+					dialog.fields_dict.items_for_si.df.data.push(item);
+			});
+			//if (!args.sales_invoice) dialog.fields_dict.items_for_si.df.data = frm.doc.items;
+
+			this.data = dialog.fields_dict.items_for_si.df.data;
+			dialog.fields_dict.items_for_si.grid.refresh();
+		});
+	},
+
 	setup: function(frm) {
 		frappe.ui.form.States.prototype.setup_help = function(){}
 		//$(".dropdown-menu li").not(".user-action").addClass("hide");
@@ -533,6 +676,9 @@ frappe.ui.form.on('Marketplace Return', {
 
 		// make replacement invoice
 		frm.add_custom_button(__('Make Replacement Invoice'), () => frm.events.make_replacement_invoice(frm));
+
+		// receive new items from Supplier (new purchase invoice)
+		frm.add_custom_button(__('Receive New Items from Supplier'), () => frm.events.make_new_purchase_invoice(frm));
 
 		if (frm.doc.docstatus === 1) {
 			if (frm.doc.per_transferred < 100) {

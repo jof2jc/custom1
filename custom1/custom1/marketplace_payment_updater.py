@@ -108,6 +108,8 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 		err_msg = err_msg + "Customer %s not found" % (customer) + "\n"
 
 	data_import_doc.references = []
+	data_import_doc.deductions = []
+	data_import_doc.difference_amount = data_import_doc.unallocated_amount = 0
 
 	#extract and map source data and populate outstanding invoices
 	if not error_flag:
@@ -121,11 +123,11 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 				is_finish=0
 				for mpm in customer_doc.marketplace_payment_mapper:
 					if mpm.order_no_col_idx and mpm.order_no_col_idx == idx and not val[0] and d: #if order_no_col_idx is specified
-						val[0] = cstr(d)
+						val[0] = cstr(d).split(".")[0]
 						val[2] = mpm.type
 						val[3] = mpm.amount_column_index
 
-					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword.strip())
+					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword)
 					if len(s) > 1 and not val[0]: #keywords mapper matched
 						try:
 							if not val[0]:
@@ -148,20 +150,22 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 							error_flag = True
 							err_msg = 'Data Row %s. Could not get Order ID "%s", please check data and mapper setting' % (cstr(row_idx), cstr(d))
 					'''
-					if val[0] and val[3] == idx and not val[1]: #get payment amount
+					#if val[0] and val[3] == idx and not val[1]: #get payment amount
+					if (val[0] and val[3] == idx) or (mpm.amount_column_index == idx and not val[1]): #if amount_column_idx comes before order_no_idx
+
 						try:
-							if val[2] == "Received": val[1] = flt(cstr(d)) or 0
-							elif val[2] == "Deduction": val[1] = abs(flt(cstr(d))) * -1 or 0
+							if (val[2] or mpm.type) == "Received": val[1] = flt(cstr(d)) or 0
+							elif (val[2] or mpm.type) == "Deduction": val[1] = abs(flt(cstr(d))) * -1 or 0
 
 							#err_msg = err_msg + "row %s. getting amount %s" % (cstr(row_idx),cstr(val)) + "\n"
 							break
 						except: 
 							error_flag = True
 							err_msg = err_msg + 'Data Row %s. Error getting amount value "%s", please check data and mapper setting' % (cstr(row_idx), cstr(d)) + "\n"
-				
-
+				#if val[0] and val[1]:
+				#	frappe.throw("val[0] == " + cstr(val[0]) + ", val[1] == " + cstr(val[1]))
 				#add payment entry invoices reference
-				if not is_finish and val[0] and val[1] and frappe.db.exists("Sales Invoice",{"name":val[0], "docstatus":1, "is_return":0, "outstanding_amount": (">", 0)}):	
+				if not is_finish and val[0] and val[1] and frappe.db.exists("Sales Invoice",{"name":cstr(val[0]), "docstatus":1, "is_return":0, "outstanding_amount": (">", 0)}):	
 					is_exists = 0
 					inv = frappe.get_doc("Sales Invoice",{"name":val[0], "docstatus":1, "is_return": 0, "outstanding_amount": (">", 0)})
 					received_amount = flt(val[1]) #inv.outstanding_amount if flt(val[1]) > inv.outstanding_amount else flt(val[1])

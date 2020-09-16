@@ -166,7 +166,7 @@ def update_marketplace_return_on_purchase_invoice_submit_cancel(self, method):
 								if self.is_return and not item.purchase_return_no: 
 									item.db_set("purchase_return_no",d.parent)
 
-								elif not self.is_return and not item.purchase_invoice and item.purchase_return_no: 
+								elif not self.is_return and not item.purchase_invoice and item.purchase_return_no == d.purchase_return_no: 
 									item.db_set("purchase_invoice",d.parent)
 
 								item.db_set("supplier",self.supplier)
@@ -175,7 +175,7 @@ def update_marketplace_return_on_purchase_invoice_submit_cancel(self, method):
 
 								if self.is_return and item.purchase_return_no: 
 									item.db_set("purchase_return_no","")
-								elif not self.is_return and item.purchase_invoice and item.purchase_return_no: 
+								elif not self.is_return and item.purchase_invoice: #and item.purchase_return_no: 
 									item.db_set("purchase_invoice","")
 	
 							frappe.db.commit()

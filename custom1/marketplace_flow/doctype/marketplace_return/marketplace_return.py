@@ -167,6 +167,65 @@ class MarketplaceReturn(Document):
 
 
 @frappe.whitelist()
+def make_new_purchase_invoice(source_name, for_supplier=None, selected_items=[], target_doc=None):
+	if isinstance(selected_items, string_types):
+		selected_items = json.loads(selected_items)
+
+	def set_missing_values(source, target):
+		target.supplier = for_supplier
+		target.is_return = 0
+
+	def update_item(source, target, source_parent):
+		if target.qty < 0: target.qty = target.qty * -1
+
+	suppliers =[]
+	if for_supplier:
+		suppliers.append(for_supplier)
+
+	if not suppliers:
+		frappe.throw(_("Please set a Supplier against Selected Items."))
+
+	for supplier in suppliers:
+		si =frappe.get_list("Purchase Invoice", filters={"marketplace_return":source_name, "supplier":supplier, "docstatus": (">", "2")})
+		if len(si) == 0:
+			doc = get_mapped_doc("Marketplace Return", source_name, {
+				"Marketplace Return": {
+					"doctype": "Purchase Invoice",
+					"field_no_map": [
+						"posting_date",
+						"status"
+					],
+					"validation": {
+						"docstatus": ["=", 1]
+					}
+				},
+				"Marketplace Return Item": {
+					"doctype": "Purchase Invoice Item",
+					"field_map":  [
+						["name", "ref_item_name"],
+						["parent", "marketplace_return"],
+						["sales_return_no", "sale_return_no"],
+						["sales_invoice", "item_invoice"],
+						["purchase_return_no", "purchase_return_no"],
+						["batch_no","batch_no"],
+						["serial_no","serial_no"]
+			 		],
+					"field_no_map": [
+						"rate",
+						"price_list_rate"
+					],
+					"postprocess": update_item,
+					"condition": lambda doc: doc.item_code in selected_items and doc.sales_return_no and doc.purchase_return_no and not doc.purchase_invoice
+				}
+			}, target_doc, set_missing_values)
+		else:
+			suppliers =[]
+	if suppliers:
+		return doc
+	else:
+		frappe.msgprint(_("New Purchase Invoice already created for selected items"))
+
+@frappe.whitelist()
 def make_purchase_return(source_name, for_supplier=None, selected_items=[], target_doc=None):
 	if isinstance(selected_items, string_types):
 		selected_items = json.loads(selected_items)
@@ -415,6 +474,31 @@ def get_customer(doctype, txt, searchfield, start, page_len, filters):
 			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
 			if(locate(%(_txt)s, customer_name), locate(%(_txt)s, customer_name), 99999),
 			name, customer_name
+		limit %(start)s, %(page_len)s """.format(**{
+			'field': fields,
+			'key': frappe.db.escape(searchfield)
+		}), {
+			'txt': "%%%s%%" % txt,
+			'_txt': txt.replace("%", ""),
+			'start': start,
+			'page_len': page_len,
+			'parent': filters.get('parent')
+		})
+
+@frappe.whitelist()
+def get_supplier(doctype, txt, searchfield, start, page_len, filters):
+	fields = ["name", "supplier_name"]
+	fields = ", ".join(fields)
+
+	return frappe.db.sql("""select {field} from `tabSupplier`
+		where docstatus < 2
+			and ({key} like %(txt)s
+				or supplier_name like %(txt)s)
+			and name in (select mret.supplier from `tabMarketplace Return Item` mret where mret.parent = %(parent)s)
+		order by
+			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
+			if(locate(%(_txt)s, supplier_name), locate(%(_txt)s, supplier_name), 99999),
+			name, supplier_name
 		limit %(start)s, %(page_len)s """.format(**{
 			'field': fields,
 			'key': frappe.db.escape(searchfield)

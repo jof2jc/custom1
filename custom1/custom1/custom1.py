@@ -722,6 +722,8 @@ def si_before_insert(self, method):
 
 				if "FINNIX" in company.upper():
 					self.order_status = "Pending"
+				elif "TRIMATARI BIO" in company.upper():
+					self.order_status = "To Pick"
 
 				self.pending_remarks = order_status
 			else: 

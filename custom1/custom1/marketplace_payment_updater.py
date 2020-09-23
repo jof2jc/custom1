@@ -127,7 +127,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 						val[2] = mpm.type
 						val[3] = mpm.amount_column_index
 
-					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword)
+					s = '$'.join([cstr(d) for d in row if d]).split(mpm.keyword.strip()) if mpm.keyword else ""
 					if len(s) > 1 and not val[0]: #keywords mapper matched
 						try:
 							if not val[0]:

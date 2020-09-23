@@ -176,7 +176,12 @@ def make_new_purchase_invoice(source_name, for_supplier=None, selected_items=[],
 		target.is_return = 0
 
 	def update_item(source, target, source_parent):
+		from custom1.custom1.custom1 import get_last_rate_by_supplier
+
 		if target.qty < 0: target.qty = target.qty * -1
+		if not target.rate:
+			last_purchase_rate = get_last_rate_by_supplier(for_supplier, target.item_code) or 0.0
+			if last_purchase_rate: target.rate = flt(last_purchase_rate[0][0]) 
 
 	suppliers =[]
 	if for_supplier:

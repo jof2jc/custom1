@@ -333,6 +333,9 @@ def si_before_submit(self, method):
 	if meta.has_field("awb_no") and meta.has_field("order_status") :
 		if not self.no_online_order:return #skip if not-online_order
 
+		if meta.has_field("insufficient_stock"):
+			self.insufficient_stock = 0
+
 		from custom1.marketplace_flow.marketplace_flow import validate_mandatory
 		msg = validate_mandatory(self)
 		if msg: frappe.throw(msg)
@@ -816,8 +819,10 @@ def si_before_insert(self, method):
 		calculate_mp_seller_discount(self)
 		update_seller_notes(self)
 
-		base_total = 0.0
-		for d in self.items:
+		''' unboxing product_bundle '''
+		product_bundle = []
+		items = self.items		
+		for idx, d in enumerate (items):
 			if not d.item_code:
 				frappe.throw(_("Item Code / SKU is required : {0}").format(self.no_online_order))
 			
@@ -840,7 +845,36 @@ def si_before_insert(self, method):
 				d.item_name = frappe.db.get_value("Item", {"name":d.item_code}, "item_name") or d.item_code
 				if not d.description:
 					d.description = d.item_name
+			
+			if frappe.get_value("Product Bundle",d.item_code,"new_item_code"):
+				del self.items[idx]
+				#new_row = items.pop(idx)
+				bundle_qty = flt(frappe.db.sql('''select sum(bundle.qty) from `tabProduct Bundle Item` bundle join `tabItem` it on bundle.item_code=it.item_code
+					where it.disabled=0 and it.is_stock_item=1 and bundle.parent=%s''', (d.item_code), as_dict=0)[0][0]) or 1.0
+				
+				if not flt(cstr(d.rate)):
+					d.rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) 
+					if d.rate: d.price_list_rate = d.rate
 
+				for i, row in enumerate (frappe.db.sql('''select distinct bundle.parent, bundle.item_code, bundle.qty 
+					from `tabProduct Bundle Item` bundle join `tabItem` it on bundle.item_code=it.item_code
+					where it.disabled=0 and it.is_stock_item=1 and bundle.parent=%s''', (d.item_code), as_dict=1)):
+
+					new_row = self.append("items") #frappe.new_doc("Sales Invoice Item")
+					#new_row.name = r.name
+					#new_row.parent = self.name
+					new_row.item_code = row.item_code
+					new_row.qty = flt(row.qty) * flt(d.qty)
+					new_row.rate = d.rate / (bundle_qty*d.qty) or 0.0
+					#items.append(new_row)
+
+		#if items != self.items:
+		#	self.items = items
+
+		base_total = 0.0
+		for idx, d in enumerate(self.items):
+			d.idx = idx+1
+			if d.item_code:
 				if not d.rate:
 					from erpnext.stock.utils import get_incoming_rate
 					d.rate = get_incoming_rate(args={"item_code":d.item_code}) or 10000.0
@@ -1100,7 +1134,7 @@ def get_last_rate_by_customer_so(customer,item_code):
 def get_last_rate_by_supplier(supplier,item_code):
 	return frappe.db.sql('''select si_item.rate from `tabPurchase Invoice` si join `tabPurchase Invoice Item` si_item on si.name=si_item.parent
 		where si.docstatus=1 and supplier=%s and item_code=%s
-		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (("%" + supplier + "%"),item_code), as_dict=0)
+		and si.is_return=0 and si_item.rate > 0 order by si.posting_date desc, si.posting_time desc limit 1''', (supplier,item_code), as_dict=0)
 
 @frappe.whitelist()
 def get_last_rate_by_supplier_po(supplier,item_code):

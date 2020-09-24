@@ -1015,16 +1015,18 @@ def si_before_insert(self, method):
 				"tax_amount": flt(self.insurance_fee)
 			})
 
-	calculate_shipping_internal_charges(self, base_total)
+	if "marketplace_courier" in frappe.db.get_table_columns(self.doctype):
+		calculate_shipping_internal_charges(self, base_total)
 
 def calculate_shipping_internal_charges(self, base_total=0):
 	''' Calculate custom insurance fee '''
 	if self.is_return: return
 
-	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
-		if not frappe.get_value("Company", self.company,"apply_marketplace_workflow"): return
+	
+	#if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+	#	apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or ""
 
-	if self.marketplace_courier:
+	if self.marketplace_courier and "internal_charges" in frappe.db.get_table_columns(self.doctype):
 		if not base_total: base_total = self.base_total
 		if not base_total: return
 

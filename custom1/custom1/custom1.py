@@ -707,6 +707,8 @@ def si_before_insert(self, method):
 			_disc = 0.0
 			if not flt(cstr(d.rate)):
 				_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+			else:
+				_rate = flt(d.rate)
 
 			if "discount_marketplace" in frappe.db.get_table_columns(d.doctype):
 				if d.discount_marketplace:
@@ -722,6 +724,7 @@ def si_before_insert(self, method):
 				d.price_list_rate = _rate
 				if company == "BOMBER STORE":
 					validate_selling_price(d)
+			
 
 			""" Get marketplace fee for official store """
 			item_group = frappe.db.get_value("Item", {"name":d.item_code}, "item_group") or "Products"

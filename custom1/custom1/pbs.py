@@ -76,12 +76,17 @@ def update_clearance_date2(bank_account, payment_entries=[]):
 	data = ast.literal_eval(payment_entries)
 	#frappe.msgprint(cstr(data))
 
+	msg = ""
+
 	for d in data:
 		d=frappe._dict(d)
 		#frappe.msgprint(cstr(d))
 		if d.clearance_date and d.clearance_account and d.cheque_number:
 			if not d.payment_document:
 				frappe.throw(_("Row #{0}: Payment document is required to complete the trasaction"))
+			elif d.payment_entry and frappe.get_value(d.payment_document,{"name":d.payment_entry, "docstatus":1},"clearance_date"):
+				msg = msg + d.payment_document + " " + d.payment_entry + " was already cleared\n"
+				continue
 
 			if d.cheque_date and getdate(d.clearance_date) < getdate(d.cheque_date):
 				frappe.throw(_("Row #{0}: Clearance date {1} cannot be before Cheque Date {2}")
@@ -141,4 +146,5 @@ def update_clearance_date2(bank_account, payment_entries=[]):
 		#else:
 		#	frappe.throw(_("Cheque number is required. Also please set Clearance Date and Clearing Account"))
 		#	return
-			
+		if msg:
+			frappe.msgprint(msg)

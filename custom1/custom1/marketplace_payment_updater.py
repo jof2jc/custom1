@@ -165,7 +165,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 				#if val[0] and val[1]:
 				#	frappe.throw("val[0] == " + cstr(val[0]) + ", val[1] == " + cstr(val[1]))
 				#add payment entry invoices reference
-				if not is_finish and val[0] and val[1] and frappe.db.exists("Sales Invoice",{"name":cstr(val[0]), "docstatus":1, "is_return":0, "outstanding_amount": (">", 0)}):	
+				if not is_finish and val[0] and val[1] and frappe.db.exists("Sales Invoice",{"name":cstr(val[0]), "customer":customer or data_import_doc.party, "docstatus":1, "is_return":0, "outstanding_amount": (">", 0)}):	
 					is_exists = 0
 					inv = frappe.get_doc("Sales Invoice",{"name":val[0], "docstatus":1, "is_return": 0, "outstanding_amount": (">", 0)})
 					received_amount = flt(val[1]) #inv.outstanding_amount if flt(val[1]) > inv.outstanding_amount else flt(val[1])

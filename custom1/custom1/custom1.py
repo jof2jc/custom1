@@ -924,6 +924,8 @@ def si_before_insert(self, method):
 			_disc = 0.0
 			if not flt(cstr(d.rate)):
 				_rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) #cstr(Decimal(sub(r'[^\d.]', '', cstr(d.rate or "0"))))
+			else:
+				_rate = flt(d.rate)
 
 			if "discount_marketplace" in frappe.db.get_table_columns(d.doctype):
 				if d.discount_marketplace:

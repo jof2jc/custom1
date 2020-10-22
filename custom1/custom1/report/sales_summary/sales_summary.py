@@ -28,7 +28,7 @@ def _execute(filters, additional_table_columns=None, additional_query_columns=No
 		# invoice details
 
 		row = [
-			inv.customer, inv.territory, inv.qty, inv.grand_total, inv.outstanding_amount
+			inv.customer, inv.territory, inv.grand_total, inv.outstanding_amount
 		]
 
 		data.append(row)
@@ -39,8 +39,8 @@ def get_columns(invoice_list, additional_table_columns):
 	"""return columns based on filters"""
 	columns = [
 		_("Customer") + ":Link/Customer:120",
-		_("Territory") + ":Link/Territory:120",
-		_("Qty") + ":Float:70"
+		_("Territory") + ":Link/Territory:120"
+		#_("Qty") + ":Float:70"
 	]
 
 	columns = columns + [_("Grand Total") + ":Currency/currency:120",
@@ -55,8 +55,9 @@ def get_conditions(filters):
 	if filters.get("customer"): conditions += " and customer = %(customer)s"
 	if filters.get("territory"): conditions += " and territory = %(territory)s"
 
-	if filters.get("from_date"): conditions += " and posting_date >= %(from_date)s"
-	if filters.get("to_date"): conditions += " and posting_date <= %(to_date)s"
+	if filters.get("from_date") and filters.get("to_date"): 
+		conditions += " and posting_date between %(from_date)s and %(to_date)s"
+	#if filters.get("to_date"): conditions += " and posting_date <= %(to_date)s"
 
 	if filters.get("mode_of_payment"):
 		conditions += """ and exists(select name from `tabSales Invoice Payment`
@@ -70,9 +71,13 @@ def get_sales_summary(filters, additional_query_columns):
 		additional_query_columns = ', ' + ', '.join(additional_query_columns)
 
 	conditions = get_conditions(filters)
-	return frappe.db.sql("""select si.customer, si.territory, sum(si_item.qty) as qty, si.grand_total, si.outstanding_amount
-		from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
-		where si.docstatus = 1 %s group by si.customer, si.territory order by customer asc""" %
+	#return frappe.db.sql("""select si.customer, si.territory, sum(si.grand_total) as grand_total, sum(si.outstanding_amount) as outstanding_amount
+	#	from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
+	#	where si.docstatus = 1 %s group by si.customer, si.territory order by customer asc""" %
+	#	conditions, filters, as_dict=1)
+
+	return frappe.db.sql("""select si.customer, si.territory, sum(si.grand_total) as grand_total, sum(si.outstanding_amount) as outstanding_amount
+		from `tabSales Invoice` si where si.docstatus = 1 %s group by si.customer, si.territory order by customer asc""" %
 		conditions, filters, as_dict=1)
 
 def get_invoices(filters, additional_query_columns):

@@ -15,6 +15,12 @@ frappe.query_reports["Stock Reorder Projection"] = {
 			"label": __("To Date"),
 			"fieldtype": "Date",
 			"default": frappe.datetime.get_today()
+		},
+		{
+			"fieldname":"group_by_warehouse",
+			"label": __("Group By Warehouse"),
+			"fieldtype": "Check",
+			"default": 0
 		}
 	]
 }

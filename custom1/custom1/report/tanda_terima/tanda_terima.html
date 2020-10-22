@@ -19,6 +19,9 @@
 <h5>{% frappe.db.get_value("Customer", filters.customer, "address", function(value) { %}
 	{% console.log(value.address) %}
 {% }) %}
+{% if (data.length) { %}
+{%= data[0]["Address"] %}
+{% } %}
 </h5>
 <h5 class="text-left">{%= __("Periode : ") %}
 	{%= frappe.datetime.str_to_user(filters.from_date) %}

@@ -37,7 +37,7 @@ def _execute(filters, additional_table_columns=None, additional_query_columns=No
 
 		customer_details = customer_map.get(inv.customer, {})
 		row = [
-			inv.name, inv.posting_date, inv.customer, inv.territory
+			inv.name, inv.posting_date, inv.customer, inv.territory, inv.address_display
 		]
 
 		# map income values
@@ -69,7 +69,7 @@ def get_columns(invoice_list, additional_table_columns):
 	"""return columns based on filters"""
 	columns = [
 		_("Invoice") + ":Link/Sales Invoice:120", _("Posting Date") + ":Date:80",
-		_("Customer") + ":Link/Customer:120", _("Territory") + ":Link/Territory:100"
+		_("Customer") + ":Link/Customer:120", _("Territory") + ":Link/Territory:100", _("Address") + "::100"
 	]
 
 	if additional_table_columns:
@@ -122,7 +122,7 @@ def get_invoices(filters, additional_query_columns):
 		additional_query_columns = ', ' + ', '.join(additional_query_columns)
 
 	conditions = get_conditions(filters)
-	return frappe.db.sql("""select name, posting_date, debit_to, project, customer, customer_name, territory, remarks,
+	return frappe.db.sql("""select name, posting_date, debit_to, project, customer, customer_name, territory, remarks, address_display,
 		base_net_total, base_grand_total, base_rounded_total, outstanding_amount {0}
 		from `tabSales Invoice`
 		where outstanding_amount != 0 and docstatus = 1 %s order by posting_date asc""".format(additional_query_columns or '') %

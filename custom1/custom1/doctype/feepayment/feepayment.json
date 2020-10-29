@@ -1,0 +1,158 @@
+{
+ "autoname": "field:requestid",
+ "creation": "2020-10-13 11:50:54.253542",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "requestid",
+  "reference",
+  "companycode",
+  "customername",
+  "customernumber",
+  "channeltype",
+  "transactiondate",
+  "paymentflagstatus",
+  "paymentflagreason",
+  "currencycode",
+  "totalamount",
+  "paidamount",
+  "subcompany",
+  "detailbills",
+  "freetexts",
+  "additionaldata",
+  "flagadvice",
+  "payment_entry",
+  "cb_01",
+  "response_format"
+ ],
+ "fields": [
+  {
+   "fieldname": "requestid",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Request ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "companycode",
+   "fieldtype": "Data",
+   "label": "Company Code"
+  },
+  {
+   "fieldname": "customername",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "customernumber",
+   "fieldtype": "Data",
+   "label": "Customer Number"
+  },
+  {
+   "fieldname": "channeltype",
+   "fieldtype": "Data",
+   "label": "Channel Type"
+  },
+  {
+   "fieldname": "transactiondate",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Transaction Date"
+  },
+  {
+   "default": "IDR",
+   "fieldname": "currencycode",
+   "fieldtype": "Data",
+   "label": "CurrencyCode"
+  },
+  {
+   "fieldname": "totalamount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Amount"
+  },
+  {
+   "default": "00000",
+   "fieldname": "subcompany",
+   "fieldtype": "Data",
+   "label": "Sub Company"
+  },
+  {
+   "default": "[]",
+   "fieldname": "detailbills",
+   "fieldtype": "Code",
+   "label": "Detail Bills",
+   "length": 1000
+  },
+  {
+   "default": "{\"Indonesian\":\"\",\"English\":\"\"}",
+   "fieldname": "freetexts",
+   "fieldtype": "Code",
+   "label": "Free Texts"
+  },
+  {
+   "fieldname": "additionaldata",
+   "fieldtype": "Data",
+   "label": "Additional Data"
+  },
+  {
+   "fieldname": "cb_01",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "{\n\"CompanyCode\":\"12345\",\n\"CustomerNumber\":\"62125000081\",\n\"RequestID\":\"201911111440437200900030146923\",\n\"PaymentFlagStatus\":\"00\",\n\"PaymentFlagReason\":{\"Indonesian\":\"Sukses\",\"English\":\"Success\"},\n\"CustomerName\":\"Ini Tester\",\n\"CurrencyCode\":\"IDR\",\n\"PaidAmount\":\"73400.00\",\n\"TotalAmount\":\"73400.00\",\n\"TransactionDate\":\"11/11/2019 14:40:43\",\n\"DetailBills\":[],\n\"FreeTexts\":[{\"Indonesian\":\"\",\"English\":\"\"}],\n\"AdditionalData\":\"\"\n}",
+   "fieldname": "response_format",
+   "fieldtype": "Code",
+   "label": "Response Format",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference"
+  },
+  {
+   "fieldname": "paidamount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Paid Amount"
+  },
+  {
+   "default": "N",
+   "fieldname": "flagadvice",
+   "fieldtype": "Data",
+   "label": "Flag Advice"
+  },
+  {
+   "default": "00",
+   "fieldname": "paymentflagstatus",
+   "fieldtype": "Data",
+   "label": "Payment Flag Status"
+  },
+  {
+   "default": "{\"Indonesian\":\"Sukses\",\"English\":\"Success\"}",
+   "fieldname": "paymentflagreason",
+   "fieldtype": "Code",
+   "label": "Payment Flag Reason"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "Payment Entry",
+   "options": "Payment Entry"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-10-15 20:04:44.126290",
+ "modified_by": "Administrator",
+ "module": "Custom1",
+ "name": "FeePayment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

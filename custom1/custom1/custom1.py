@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _, scrub
 
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name, time_diff_in_hours
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, get_site_name, time_diff_in_hours, get_weekday
 from frappe.utils.dateutils import parse_date
 from frappe.model.naming import make_autoname
 import json
@@ -72,7 +72,7 @@ def set_si_autoname(doc, method):
 
 	if doc.doctype not in ("Quotation", "Sales Order", "Delivery Note","Sales Invoice","Supplier Quotation","Material Request", \
 		"Purchase Order","Purchase Receipt","Purchase Invoice","Payment Entry","Journal Entry","Stock Entry","Stock Reconciliation", \
-		"Request for Quotation","Billing Receipt"):
+		"Request for Quotation","Billing Receipt","Fees","Fee Structure","Program Enrollment"):
 		return
 
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: # and doc.company in ("PT BLUE OCEAN LOGISTICS"):
@@ -142,6 +142,26 @@ def set_si_autoname(doc, method):
 				
 				return
 
+	if doc.doctype in("Fees") and "company_va_code" in frappe.db.get_table_columns("Company"):
+		company_va_code = frappe.get_value("Company",frappe.db.get_single_value('Global Defaults', 'default_company'), "company_va_code")
+		if company_va_code:
+			doc.name = make_autoname(company_va_code + cstr(getdate(doc.posting_date).year) + ".####")
+			return
+	elif doc.doctype in("Fee Structure"):
+		company_va_code = frappe.get_value("Company",frappe.db.get_single_value('Global Defaults', 'default_company'), "company_va_code")
+
+		if "special_code" in frappe.db.get_table_columns(doc.doctype):
+			if doc.special_code:
+				doc.name = "FS-" + doc.program + "-" + doc.academic_year + "-" + doc.special_code
+
+		if not doc.name:
+			doc.name = "FS-" + doc.program + "-" + doc.academic_year
+
+	elif doc.doctype in("Program Enrollment"):
+		company_va_code = frappe.get_value("Company",frappe.db.get_single_value('Global Defaults', 'default_company'), "company_va_code")
+
+		doc.name = "PE-" + doc.student + "-" + doc.program + "-" + doc.academic_year
+	
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company") and "no_online_order" in frappe.db.get_table_columns(doc.doctype):
 		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
@@ -304,7 +324,9 @@ def si_validate(self, method):
 		scorecard.type = "Fulfillment Admin"
 		scorecard.transaction_ref_no = self.name
 		scorecard.time_start = self.order_date
+		scorecard.weekday_start = get_weekday(scorecard.time_start) or ""
 		scorecard.time_end = now_datetime()
+		scorecard.weekday_end = get_weekday(scorecard.time_end) or ""
 
 		hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
 		score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")

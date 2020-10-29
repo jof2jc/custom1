@@ -166,8 +166,9 @@ def get_data():
 				},
 				{
 					"type": "report",
-					"name": "Fulfillment Score Card Report",
+					"name": "Fulfillment Score Card Sheet",
 					"doctype": "Marketplace Fulfillment Score Card",
+					"is_query_report": True,
 					"onboard": 1
 				},
 			]

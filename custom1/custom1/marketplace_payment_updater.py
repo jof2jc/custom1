@@ -115,7 +115,7 @@ def execute_upload_marketplace_payment(rows = None, submit_after_import=None, ig
 	if not error_flag:
 		for row_idx, row in enumerate(data, 1):
 			#set max records to 300
-			if row_idx > 300: break 
+			if row_idx > 700: break 
 
 			val = ['',0,'',0] #order_id, amount, type:received;deduction, amount_col_idx
 		

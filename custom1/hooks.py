@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from frappe import _
 
 app_name = "custom1"
 app_title = "Custom1"
@@ -118,7 +119,15 @@ website_context = {
 	"splash_image": "/assets/custom1/images/splash.png"
 }
 
-
+website_route_rules = [
+	{"from_route": "/studentfees", "to_route": "FeeBill"},
+	{"from_route": "/studentfees/<path:name>", "to_route": "student_fees_info",
+		"defaults": {
+			"doctype": "Fees",
+			"parents": [{"label": _("Student Fee List"), "route": "studentfees"}]
+		}
+	}
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"
@@ -222,6 +231,14 @@ doc_events = {
     },
     "Payment Reconciliation": {
 	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
+    },
+    "Fees": {
+	#"on_update_after_submit": "custom1.custom1.school_fees.autocreate_school_fees_payment",
+	"validate": "custom1.custom1.school_fees.validate_school_fees"
+    },
+    "FeePayment": {
+	"before_insert": "custom1.custom1.school_fees.before_insert_feepayment",
+	"after_insert": "custom1.custom1.school_fees.after_insert_feepayment"
     }
 }
 

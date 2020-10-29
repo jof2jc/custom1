@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, time_diff_in_hours
+from frappe.utils import nowdate, nowtime, now_datetime, flt, cstr, formatdate, get_datetime, add_days, getdate, get_time, time_diff_in_hours, get_weekday
 from frappe.utils.dateutils import parse_date
 import json
 from custom1.marketplace_flow.marketplace_flow import validate_mandatory
@@ -117,6 +117,7 @@ class PackItem(Document):
 					scorecard.type = "Packer"
 					scorecard.transaction_ref_no = doc.name
 					scorecard.time_start = doc.packing_start
+					scorecard.weekday_start = get_weekday(scorecard.time_start) or ""
 					scorecard.ignore_permissions = True
 					scorecard.insert()
 				
@@ -149,6 +150,7 @@ class PackItem(Document):
 					if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}):
 						scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}) 
 						scorecard.time_end = doc.packing_end
+						scorecard.weekday_end = get_weekday(scorecard.time_end) or ""
 						hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
 
 						score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Packer"]],order_by="time_factor")

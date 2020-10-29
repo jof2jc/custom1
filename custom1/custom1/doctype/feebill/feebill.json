@@ -1,0 +1,151 @@
+{
+ "autoname": "field:requestid",
+ "creation": "2020-10-13 08:47:37.619483",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "requestid",
+  "companycode",
+  "customername",
+  "customernumber",
+  "channeltype",
+  "transactiondate",
+  "inquirystatus",
+  "inquiryreason",
+  "currencycode",
+  "totalamount",
+  "minimumpayment",
+  "subcompany",
+  "detailbills",
+  "freetexts",
+  "additionaldata",
+  "cb_01",
+  "response_format"
+ ],
+ "fields": [
+  {
+   "fieldname": "requestid",
+   "fieldtype": "Data",
+   "label": "Request ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "companycode",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Company Code"
+  },
+  {
+   "fieldname": "customername",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "customernumber",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer Number"
+  },
+  {
+   "fieldname": "channeltype",
+   "fieldtype": "Data",
+   "label": "Channel Type"
+  },
+  {
+   "fieldname": "transactiondate",
+   "fieldtype": "Datetime",
+   "label": "Transaction Date"
+  },
+  {
+   "fieldname": "additionaldata",
+   "fieldtype": "Data",
+   "label": "Additional Data"
+  },
+  {
+   "default": "00",
+   "fieldname": "inquirystatus",
+   "fieldtype": "Data",
+   "label": "Inquiry Status"
+  },
+  {
+   "default": "{\"Indonesian\":\"Sukses\",\"English\":\"Success\"}",
+   "fieldname": "inquiryreason",
+   "fieldtype": "Code",
+   "label": "InquiryReason"
+  },
+  {
+   "default": "IDR",
+   "fieldname": "currencycode",
+   "fieldtype": "Data",
+   "label": "CurrencyCode"
+  },
+  {
+   "fieldname": "totalamount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Amount"
+  },
+  {
+   "default": "00000",
+   "fieldname": "subcompany",
+   "fieldtype": "Data",
+   "label": "Sub Company"
+  },
+  {
+   "default": "[]",
+   "fieldname": "detailbills",
+   "fieldtype": "Code",
+   "label": "Detail Bills",
+   "length": 1000
+  },
+  {
+   "default": "{\"Indonesian\":\"\",\"English\":\"\"}",
+   "fieldname": "freetexts",
+   "fieldtype": "Code",
+   "label": "Free Texts"
+  },
+  {
+   "fieldname": "cb_01",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "{\n\"CompanyCode\":\"12345\",\n\"CustomerNumber\":\"62125000081\",\n\"RequestID\":\"201911111440437200900030146923\",\n\"InquiryStatus\":\"00\",\n\"InquiryReason\":{\"Indonesian\":\"Sukses\",\"English\":\"Success\"},\n\"CustomerName\":\"\",\n\"CurrencyCode\":\"IDR\",\n\"TotalAmount\":\"73400.00\",\n\"SubCompany\":\"00000\",\n\"DetailBills\":[],\n\"FreeTexts\":[{\"Indonesian\":\"\",\"English\":\"\"}],\n\"AdditionalData\":\"\"\n}",
+   "fieldname": "response_format",
+   "fieldtype": "Code",
+   "label": "Response Format"
+  },
+  {
+   "fieldname": "minimumpayment",
+   "fieldtype": "Float",
+   "label": "Minimum Payment"
+  }
+ ],
+ "modified": "2020-10-20 09:12:28.902108",
+ "modified_by": "Administrator",
+ "module": "Custom1",
+ "name": "FeeBill",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

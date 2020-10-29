@@ -1,0 +1,58 @@
+{
+ "autoname": "field:reference_no",
+ "creation": "2020-10-05 16:47:23.803907",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_no",
+  "reference_date",
+  "paid_amount",
+  "payment_entry"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference No",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Paid Amount",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payment Entry",
+   "options": "Payment Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Reference Date",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-10-05 20:07:15.086117",
+ "modified_by": "Administrator",
+ "module": "Custom1",
+ "name": "Fees Payment",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

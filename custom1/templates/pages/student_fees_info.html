@@ -1,0 +1,84 @@
+{% extends "templates/web.html" %}
+{% from "erpnext/templates/includes/order/order_macros.html" import item_name_and_description %}
+
+{% block breadcrumbs %}
+	{% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block title %}{{ doc.name }}{% endblock %}
+
+{% block header %}
+	<h1>{{ doc.name }} - {{ doc.student_name.upper() }} - {{ doc.program.upper() }}</h1>
+{% endblock %}
+
+{% block header_actions %}
+<a class='btn btn-xs btn-light' href='/printview?doctype={{ doc.doctype}}&name={{ doc.name }}&format={{ print_format }}' target="_blank" rel="noopener noreferrer">{{ _("Print") }}</a>
+{% endblock %}
+
+{% block page_content %}
+
+<div class="row transaction-subheading">
+	<div class="col-xs-4">
+
+		<span class="indicator {{ doc.indicator_color or ("green" if doc.docstatus==1 and not doc.outstanding_amount) or ("red" if doc.docstatus==2 else "orange") }}">
+			{{ (_("PAID") if doc.docstatus==1 and not doc.outstanding_amount) or (_("CANCELLED") if doc.docstatus==2 else _("OUTSTANDING")) }}
+			{{ "IDR " + frappe.utils.fmt_money(doc.outstanding_amount) if doc.docstatus==1 and doc.outstanding_amount else "" }}
+		</span>
+	</div>
+	<div class="col-xs-4 text-muted text-left small">
+		Total Amount : IDR {{ frappe.utils.fmt_money(doc.grand_total) }}
+	</div>
+	<div class="col-xs-4 text-muted text-right small">
+		Invoice Date: {{ frappe.utils.formatdate(doc.posting_date, 'medium') }}
+	</div>
+</div>
+<hr>
+
+{% if doc._header %}
+{{ doc._header }}
+{% endif %}
+
+<div class="order-container">
+
+	<!-- items -->
+	<div class="order-item-table">
+		<div class="row order-items order-item-header text-muted">
+			<div class="col-sm-3 col-xs-3 text-left h6 text-uppercase">
+				{{ _("Reference") }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right h6 text-uppercase">
+				{{ _("Reference Date") }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right h6 text-uppercase">
+				{{ _("VA Bill No") }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right h6 text-uppercase">
+				{{ _("Paid Amount IDR") }}
+			</div>
+		</div>
+		
+	</div>
+	{% set total_paid = 0 %}
+	{% for d in doc.payments %}
+		<div class="row order-items order-item-header text-muted">
+			<div class="col-sm-3 col-xs-3 text-left text-muted small">
+				{{ d.reference }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right text-muted small">
+				{{ d.get_formatted("transactiondate") }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right text-muted small">
+				{{ d.parent }}
+			</div>
+			<div class="col-sm-3 col-xs-3 text-right text-muted small">
+				{{ frappe.utils.fmt_money(d.paidamount) }}
+			</div>
+		</div>
+		{% set total_paid = total_paid + d.paidamount %}
+	{% endfor %}
+	<hr>
+	<div class="text-right h6 text-uppercase">
+		TOTAL PAYMENT : IDR {{ frappe.utils.fmt_money(doc.grand_total - doc.outstanding_amount) or "0.00" }}
+	</div>
+</div>
+{% endblock %}

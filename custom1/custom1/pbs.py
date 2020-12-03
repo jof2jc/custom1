@@ -141,6 +141,11 @@ def update_clearance_date2(bank_account, payment_entries=[]):
 				frappe.db.sql("""update `tab{0}` set clearance_date = %s where name=%s""".format(jv.doctype), 
 				(d.clearance_date, jv.name))
 
+				#link journal voucher to payment document
+				if "clearing_voucher" in frappe.db.get_table_columns(d.payment_document):
+					frappe.db.sql("""update `tab{0}` set clearing_voucher = %s where name=%s and docstatus=1""".format(d.payment_document), 
+					(jv.name, d.payment_entry))
+
 				frappe.db.commit()
 				#frappe.msgprint("Successfully generated clearing journal voucher: " + jv.name)
 		#else:

@@ -897,7 +897,7 @@ def get_open_customer(customer,name):
 	return frappe.db.sql('''select distinct c.name from `tabCustomer` c left join `tabSales Invoice` si on c.name=si.customer
 		where si.docstatus=0 and c.disabled=0 and c.name=%s and si.name != %s limit 1''', (customer,name), as_dict=0)
 
-def get_outstanding_invoices2(party_type, party, account, condition=None):
+def get_outstanding_invoices2(party_type, party, account, condition=None, is_billing_receipt=0):
 	outstanding_invoices = []
 	precision = frappe.get_precision("Sales Invoice", "outstanding_amount")
 
@@ -909,6 +909,7 @@ def get_outstanding_invoices2(party_type, party, account, condition=None):
 		payment_dr_or_cr = "payment_gl_entry.debit_in_account_currency - payment_gl_entry.credit_in_account_currency"
 
 	invoice = 'Sales Invoice' if party_type == 'Customer' else 'Purchase Invoice'
+
 
 	invoice_list = frappe.db.sql("""
 			select distinct
@@ -946,6 +947,10 @@ def get_outstanding_invoices2(party_type, party, account, condition=None):
 	for d in invoice_list:
 		paid_amount = None
 		if d.voucher_type == "Sales Invoice":
+			if "billing_receipt_no" in frappe.db.get_table_columns(d.voucher_type) and is_billing_receipt:
+				if frappe.db.get_value(d.voucher_type, d.voucher_no, "billing_receipt_no"):
+					continue
+
 			paid_amount = frappe.db.sql('''select sum(ref.allocated_amount) from `tabPayment Entry` pe join `tabPayment Entry Reference` ref on pe.name=ref.parent
 				where pe.docstatus=1 and pe.party_type='Customer' and pe.payment_type='Received'
 				and pe.party=%s and ref.reference_name=%s''', (party, d.voucher_no), as_dict=0)
@@ -1003,13 +1008,14 @@ def get_outstanding_reference_documents2(args):
 			.format(frappe.db.escape(args["voucher_type"]), frappe.db.escape(args["voucher_no"]))
 
 	condition = condition + " and company='{0}'".format(args.get("company"))
+	is_billing_receipt = args.get("is_billing_receipt") or 0
 
 	if args.get("from_date") and args.get("to_date") and not args.get("show_all"):
 		outstanding_invoices = get_outstanding_invoices2(args.get("party_type"), args.get("party"),
-			args.get("party_account"), condition=condition + " and posting_date between '{0}' and '{1}'".format(args.get("from_date"), args.get("to_date")))
+			args.get("party_account"), condition=condition + " and posting_date between '{0}' and '{1}'".format(args.get("from_date"), args.get("to_date")), is_billing_receipt=is_billing_receipt)
 	else:
 		outstanding_invoices = get_outstanding_invoices2(args.get("party_type"), args.get("party"),
-			args.get("party_account"), condition=condition)
+			args.get("party_account"), condition=condition, is_billing_receipt=is_billing_receipt)
 
 	for d in outstanding_invoices:
 		d["exchange_rate"] = 1

@@ -133,7 +133,8 @@ frappe.ui.form.on('Billing Receipt', {
 					"party_account": "",
 					"from_date": frm.doc.from_date,
 					"to_date": frm.doc.to_date,
-					"show_all": frm.doc.show_all
+					"show_all": frm.doc.show_all,
+					"is_billing_receipt": 1
 				}
 			},
 			callback: function(r, rt) {

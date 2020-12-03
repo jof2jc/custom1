@@ -13,11 +13,19 @@ app_version = "0.0.1"
 
 fixtures = [    
 		{
+        		"doctype": "Note"
+    		}
+]
+
+'''
+fixtures = [    
+		{
         		"doctype": "Custom Field",
 		        "dt": ["in", ["Journal Entry"]],
 				        "fieldname": ["in", ["sc_expenses","expenses"]]
     		}
 ]
+'''
 
 '''
 fixtures = [    
@@ -184,6 +192,13 @@ doc_events = {
     },
     "Payment Reconciliation": {
 	"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
+    },
+    "Billing Receipt": {
+	"on_submit": "custom1.custom1.doctype.billing_receipt.billing_receipt.update_billing_receipt_on_invoice",
+	"on_cancel": "custom1.custom1.doctype.billing_receipt.billing_receipt.update_billing_receipt_on_invoice"
+    },
+    "Journal Entry": {
+	"on_cancel": "custom1.custom1.bank_clearing.update_bank_clearing_voucher"
     }
 }
 

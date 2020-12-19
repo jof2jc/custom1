@@ -199,6 +199,9 @@ doc_events = {
     },
     "Journal Entry": {
 	"on_cancel": "custom1.custom1.bank_clearing.update_bank_clearing_voucher"
+    },
+    "Delivery Note": {
+	"validate": "custom1.custom1.custom1.validate_delivered_qty"
     }
 }
 

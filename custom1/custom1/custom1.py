@@ -168,6 +168,13 @@ def set_pi_autoname(doc, method):
 		doc.name = make_autoname("MJF-." + _year + "." + _month + ".-###")
 	'''
 
+def validate_delivered_qty(self, method):
+	for d in self.items:
+		val = frappe.get_value("Sales Order Item", {"parent": d.against_sales_order, "name": d.so_detail, "item_code": d.item_code},["delivered_qty","returned_qty","qty"])
+		if val:
+			if (flt(val[0]) - flt(val[1]) + flt(d.qty)) > flt(val[2]):
+				frappe.throw(_("Row %s. Over-Delivered for Item %s" % (d.idx, d.item_code)))
+
 def si_on_change(self, method):
 	frappe.throw(_("before_save {0}").format(self.name))
 	invoice_no = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=1 and is_return != 1 and no_online_order=%s limit 1''', self.naming_series.strip(), as_dict=0)
@@ -1126,7 +1133,7 @@ def update_default_fiscal_year():
 def delete_old_docs_daily1():
 	old_docs = frappe.db.sql ("""SELECT name, creation FROM `tabFile` where datediff(now(),creation) > 0 and folder in ('Home/Attachments') 
 		and file_name not like '%into-the-dawn%' and file_name not like '%.png%' and file_name not like '%Generate_Template%' 
-		and attached_to_doctype not in ('Item') order by creation desc""", as_dict=1)
+		and attached_to_doctype not in ('Item','Project') order by creation desc""", as_dict=1)
 
 	if old_docs:
 		for d in old_docs:

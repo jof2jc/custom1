@@ -130,6 +130,7 @@ def handle():
 					body = data or {}
 					if doctype == "FeeBill" and body:
 						data = {}
+						err_msg = ""
 						for k,v in body.items():
 							data[k.lower()] = v
 							if not v and k != "AdditionalData": err_flag = 1
@@ -144,13 +145,17 @@ def handle():
 						except Exception as e:
 							err_flag = 1
 							error_trace = frappe.get_traceback()
-							if error_trace: frappe.log_error(error_trace)
+							if error_trace: 
+								err_msg = error_trace
+								frappe.log_error(error_trace)
+							
 
 						feebill = {}
 						if not data.get("totalamount") or not data.get("customername"): err_flag = 1
 						elif frappe.db.exists(doctype,{"name":data.get("requestid")}):
 							err_flag = 1
-							#raise frappe.ValidationError("Duplicate RequestID. Rejected")	
+							err_msg = 'Duplicate Inquiry for RequestID "%s". Rejected' % (data.get("requestid"))
+							frappe.log_error(err_msg)
 
 						if not err_flag:
 							try:
@@ -158,7 +163,9 @@ def handle():
 							except Exception as e:
 								err_flag = 1
 								error_trace = frappe.get_traceback()
-								if error_trace: frappe.log_error(error_trace)
+								if error_trace: 
+									err_msg = error_trace
+									frappe.log_error(error_trace)
 						
 						#if frappe.get_value("Fees",{"name":data.get("companycode") + data.get("customernumber")},"outstanding_amount") and \
 						#	not frappe.db.exists(doctype,{"name":data.get("requestid")}) and not err_flag:
@@ -205,8 +212,10 @@ def handle():
 							})
 							data["inquirystatus"] = "01"
 
-							if not frappe.db.exists(doctype,{"name":data.get("requestid")}) and not err_flag:
-								frappe.get_doc(data).insert()
+							#if not frappe.db.exists(doctype,{"name":data.get("requestid")}):
+							#	if err_msg: data["freetexts"] = {"Indonesian": err_msg, "English": err_msg}
+							#	if data.get("freetexts"):
+							#		frappe.get_doc(data).insert()
 							#raise frappe.DoesNotExistError
 
 					elif doctype == "FeePayment" and body:
@@ -261,6 +270,7 @@ def handle():
 									"TransactionDate": body.get("TransactionDate"),
 									"AdditionalData": ""
 								})
+						else: err_flag=1
 							
 						if err_flag:
 							#raise frappe.DoesNotExistError							

@@ -53,6 +53,10 @@ class PickItem(Document):
 		conditions = ""
 		if self.store_name: 
 			conditions += " and customer='{}'".format(self.store_name)
+		if self.marketplace_courier:
+			if "marketplace_courier" in frappe.db.get_table_columns("Sales Invoice"): 
+				conditions += " and marketplace_courier='{}'".format(self.marketplace_courier)
+			else: conditions += " and courier like '%{}%'".format(self.marketplace_courier)
 
 		self.to_pick_log = None
 		to_pick_log = []
@@ -141,6 +145,11 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 
 	image_url=None
 
+	company = frappe.db.get_single_value('Global Defaults', 'default_company')
+	apply_marketplace_workflow = 0
+	if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+		apply_marketplace_workflow = frappe.get_value("Company", company,"apply_marketplace_workflow") or 0
+
 	si = frappe.db.sql('''select name from `tabSales Invoice` where docstatus=0 and is_return=0 and (no_online_order=%s or awb_no=%s) limit 1''', (awb_order_no,awb_order_no),as_dict=0) or ""
 
 	''' get si item '''
@@ -210,7 +219,10 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 
 						serial_nos = frappe.get_list("Serial No", fields="name", filters = [["name","=",serial_batch_no.strip()],["delivery_document_no","=",""], ["status", "not in", ["Expired","Delivered"]]])
 
-						if (len(serial_list) < d.qty and serial_batch_no.strip() not in serial_list) and serial_nos:
+						if not serial_nos:
+							message[3] = 'Item "%s" must have valid Serial Nos' % (item_code) 
+							return message
+						elif (len(serial_list) < d.qty and serial_batch_no.strip() not in serial_list) and serial_nos:
 							d.serial_no = cstr(d.serial_no) + serial_nos[0].name + "\n"
 						elif (len(serial_list) < d.qty and serial_batch_no.strip() in serial_list) and serial_nos:
 							message[3] = 'Failed: Serial "%s" was entered already' % (serial_batch_no) 
@@ -246,26 +258,21 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 							message[3] = "Error: Serialized Item must be scanned"
 							return message
 						else: 
-							d.picked_qty = flt(total_item_qty)
+							d.db_set("picked_qty", flt(total_item_qty))
 					else:
 						if total_bundle_qty:
-							d.picked_qty = d.picked_qty + flt(1.0/(total_bundle_qty * d.qty))
-						else: d.picked_qty += 1
+							d.db_set("picked_qty", d.picked_qty + flt(1.0/(total_bundle_qty * d.qty)))
+						else: d.db_set("picked_qty", d.picked_qty + 1)
 
 					message[1] = d.picked_qty
 	
 					if (d.picked_qty == d.qty) or (abs(d.qty - d.picked_qty) < 0.04 and d.picked_qty > 0):
-						d.picked_qty = d.qty
-						d.is_picked = 1
+						d.db_set("picked_qty", d.qty)
+						d.db_set("is_picked", 1)
 						message[2] = d.is_picked
-						message[3] = "Completed"
-						d.picked_time = now_datetime()
+						message[3] = "Partially Complete"
+						d.db_set("picked_time", now_datetime())
 
-						#check whether all items are packed then change status
-						#if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
-						if not frappe.get_list("Sales Invoice Item", fields="name", filters = [["name","!=",d.name],["parent","=",doc.name],["is_picked", "=", "0"]]): 
-							doc.order_status = "To Pack"
-						#doc.save()
 
 						if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}):
 							scorecard = frappe.get_doc("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Picker"}) 
@@ -279,7 +286,33 @@ def update_picked_item(awb_order_no, serial_batch_no, item_code, total_item_qty=
 							scorecard.ignore_permissions = True
 							scorecard.save()
 	
+
+					#check whether all items are packed then change status
+					#if not frappe.db.get_values("Sales Invoice Item", {"parent":doc.name,"is_picked":"0"},"item_code"):
+					if not frappe.get_list("Sales Invoice Item", fields="name", filters = [["parent","=",doc.name],["is_picked", "=", "0"]]): 
+						message[3] = "All items are Completed"
+
+						if "#QC" in cstr(doc.seller_notes):
+							doc.order_status = "Send to QC"
+							message[3] = "All items are Completed. Sent to #QC"
+						else: 
+							if apply_marketplace_workflow:
+								doc.order_status = "To Pack"
+							else: doc.order_status = "Completed"
+
+							if doc.order_status == "To Pick": doc.order_status = "Completed"
+							
+
 					doc.save()
+
+					if doc.order_status in ("Completed","To Pack", "Send to QC"): 
+						doc.flags.ignore_permissions = True
+						doc.posting_date = nowdate()
+						doc.posting_time = nowtime()
+
+						doc.delivery_date = nowdate()
+						doc.submit()
+
 					frappe.db.commit()
 
 					return message

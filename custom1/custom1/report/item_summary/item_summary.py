@@ -172,14 +172,16 @@ def get_price_list(filters):
 
 	rate = {}
 
-	price_list = frappe.db.sql("""select ip.item_code, ip.buying, ip.selling,
+	price_list = frappe.db.sql("""select ip.item_code, ip.buying, ip.selling, ip.price_list,
 		concat(ifnull(cu.symbol,ip.currency), " ", FORMAT(ip.price_list_rate,2), " - ", ip.price_list) as price
 		from `tabItem Price` ip, `tabPrice List` pl, `tabCurrency` cu
-		where ip.price_list=pl.name and pl.currency=cu.name and pl.enabled=1 and ip.selling=1 {pl_conditions}"""\
+		where ip.price_list=pl.name and pl.currency=cu.name and pl.enabled=1 and ip.selling=1 {pl_conditions} order by ip.price_list"""\
 		.format(pl_conditions=get_pl_conditions(filters)), filters, as_dict=1)
 
+	from frappe.permissions import has_user_permission
+
 	for j in price_list:
-		if j.price:
+		if j.price and has_user_permission(frappe.get_doc("Price List", j.price_list), frappe.session.user):
 			rate.setdefault(j.item_code, {}).setdefault("Buying" if j.buying else "Selling", []).append(j.price)
 	item_rate_map = {}
 	#print rate

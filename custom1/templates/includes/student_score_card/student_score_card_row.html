@@ -1,0 +1,23 @@
+<div class="web-list-item transaction-list-item">
+	<div class="row">
+		<div class="col-sm-5">
+			<span class="indicator small {{ "blue" if doc.docstatus==1 else "orange" }}">
+			{{ doc.name }}</span>
+			
+		</div>
+		<div class="col-sm-3">
+			<div class="small text-muted items-preview ellipsis ellipsis-width">
+				{{ doc.student }} - {{ doc.program }}<br>
+				{{ doc.student_name }}
+				
+			</div>
+		</div>
+		<div class="col-sm-4 text-right bold">
+			<div class="small text-muted transaction-time"
+				title="{{ frappe.utils.format_datetime(doc.posting_date, "medium") }}">
+				Submission Date: {{ frappe.utils.global_date_format(doc.posting_date) }}
+			</div>
+		</div>
+	</div>
+	<a class="transaction-item-link" href="/{{ pathname }}/{{ doc.name }}">Link</a>
+</div>

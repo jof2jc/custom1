@@ -198,5 +198,15 @@ def get_data():
 					"onboard": 1
 				},
 			]
+		},
+		{
+			"label": _("Tools"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Activity Log",
+					"onboard": 1
+				},
+			]
 		}
 	]

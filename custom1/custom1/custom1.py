@@ -72,7 +72,7 @@ def set_si_autoname(doc, method):
 
 	if doc.doctype not in ("Quotation", "Sales Order", "Delivery Note","Sales Invoice","Supplier Quotation","Material Request", \
 		"Purchase Order","Purchase Receipt","Purchase Invoice","Payment Entry","Journal Entry","Stock Entry","Stock Reconciliation", \
-		"Request for Quotation","Billing Receipt","Fees","Fee Structure","Program Enrollment"):
+		"Request for Quotation","Billing Receipt","Fees","Fee Structure","Program Enrollment","Guardian","Student"):
 		return
 
 	if "no_invoice" in frappe.db.get_table_columns(doc.doctype) and not doc.amended_from: # and doc.company in ("PT BLUE OCEAN LOGISTICS"):
@@ -161,7 +161,16 @@ def set_si_autoname(doc, method):
 		company_va_code = frappe.get_value("Company",frappe.db.get_single_value('Global Defaults', 'default_company'), "company_va_code")
 
 		doc.name = "PE-" + doc.student + "-" + doc.program + "-" + doc.academic_year
-	
+
+	elif doc.doctype in("Guardian"):
+		if doc.email_address:
+			doc.name = doc.email_address
+
+	elif doc.doctype in("Student"):
+		if "student_id" in frappe.db.get_table_columns(doc.doctype):
+			if doc.student_id: 
+				doc.name = doc.student_id
+
 	is_online_shop=0;
 	if "is_online_shop" in frappe.db.get_table_columns("Company") and "no_online_order" in frappe.db.get_table_columns(doc.doctype):
 		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
@@ -194,6 +203,27 @@ def si_on_change(self, method):
 	if invoice_no:
 		self.name = cstr(invoice_no[0][0])
 
+def si_on_update_after_submit(self, method):
+	meta = frappe.get_meta(self.doctype)
+	if meta.has_field("awb_no") and meta.has_field("order_status"):
+		apply_marketplace_workflow = 0
+		if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
+			apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
+			if not apply_marketplace_workflow:
+				return
+
+		if self.order_status not in ("To Pack","Completed") and self.docstatus == 1: 
+			frappe.throw(_('You can only change Order Status to To Pack, Completed after submission'))
+
+		elif self.order_status == "To Pack" and (self.packing_start or self.packing_end):
+			frappe.throw(_('Rejected. You cannot set back to "To Pack" as this document is already completed before'))
+
+		elif self.order_status == "Completed" and not self.packing_start and not self.packing_end:
+			frappe.throw(_('Rejected. You cannot set to Completed manually. Please follow Packing Item module'))
+
+		if frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
+			frappe.throw(_("Error. Not picked items found"))
+
 def si_after_save(self, method):
 	#controller to validate user when change order_status manually
 	meta = frappe.get_meta(self.doctype)
@@ -211,9 +241,13 @@ def si_after_save(self, method):
 				return
 
 		if self.order_status == "To Pack": 
+			#if self.docstatus != 1: #To Pack must submitted doc
+			#	frappe.throw(_('Cannot change to "To Pack" manually'))
+
 			if frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
-				self.db_set("order_status","To Pick")
-				frappe.msgprint(_("Not picked items found. Changed order status = To Pick"))
+				#self.db_set("order_status","To Pick")
+				#frappe.msgprint(_("Not picked items found. Changed order status = To Pick"))
+				frappe.throw(_("Error. Not picked items found"))
 	
 		elif self.order_status == "Completed": 
 			if self.docstatus != 1 and not self.packing_end:
@@ -222,19 +256,24 @@ def si_after_save(self, method):
 		elif self.order_status == "Cancelled": 
 			frappe.msgprint(_("Warning. If you change order status to Cancelled then you will not be able to continue"))
 		
-		elif self.no_online_order and self.awb_no and not self.order_status: 
+		elif (self.no_online_order or self.awb_no) and not self.order_status: 
 			frappe.throw(_("Order Status cannot be blank"))
 
 		#doc = frappe.get_doc("Sales Invoice", self.name)
 		for d in self.items:
-			if apply_marketplace_workflow and ((d.is_picked and d.qty != d.picked_qty) or (d.qty < d.picked_qty and d.qty != 0)):
-				d.is_picked=0
-				frappe.throw(_("Please make sure Picked Qty is equal with Order Qty before change Is_Picked. Item: {0}".format(d.item_code)))
+			if self.docstatus == 0 and apply_marketplace_workflow and ((d.is_picked and d.qty != d.picked_qty) or (d.qty < d.picked_qty and d.qty != 0)):
+				d.db_set("is_picked", 0)
+				self.db_set("order_status","To Pick")
+				frappe.msgprint(_("Please make sure Picked Qty is equal with Order Qty before change Is_Picked. Item: {0}. Changed order status = To Pick".format(d.item_code)))
 
-		if self.order_status == "To Pick": 
-			if not frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
-				self.db_set("order_status","To Pack")
-				frappe.msgprint(_("All items are picked already. Changed order status = To Pack"))
+		if self.order_status == "To Pick":
+			if not self.docstatus == 0:
+				frappe.throw(_("Cannot change order_status to To Pick after Invoice is submitted"))
+ 
+			elif not frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
+				frappe.throw(_("Error. All items are picked already"))
+				#self.db_set("order_status","To Pack")
+				#frappe.msgprint(_("All items are picked already. Changed order status = To Pack"))
 
 
 			
@@ -324,9 +363,9 @@ def si_validate(self, method):
 		scorecard.type = "Fulfillment Admin"
 		scorecard.transaction_ref_no = self.name
 		scorecard.time_start = self.order_date
-		scorecard.weekday_start = get_weekday(scorecard.time_start) or ""
+		scorecard.weekday_start = get_weekday(get_datetime(scorecard.time_start)) or ""
 		scorecard.time_end = now_datetime()
-		scorecard.weekday_end = get_weekday(scorecard.time_end) or ""
+		scorecard.weekday_end = get_weekday(get_datetime(scorecard.time_end)) or ""
 
 		hour_diff = time_diff_in_hours(scorecard.time_end, scorecard.time_start)
 		score_list = frappe.get_list("Score Card Template",fields=["name"],filters=[["time_factor",">=",hour_diff],["score_type","=","Fulfillment Admin"]],order_by="time_factor")
@@ -366,14 +405,18 @@ def si_before_submit(self, method):
 		if "apply_marketplace_workflow" in frappe.db.get_table_columns("Company"):
 			apply_marketplace_workflow = frappe.get_value("Company", self.company,"apply_marketplace_workflow") or 0
 
-		if (not apply_marketplace_workflow or (self.order_status == "To Pack" and self.packing_start and self.packing_end)) and not self.is_return:
+		#if (not apply_marketplace_workflow or (self.order_status == "To Pack" and self.packing_start and self.packing_end)) and not self.is_return:
+		if not apply_marketplace_workflow and not self.is_return:
 			self.delivery_date = nowdate()
 			self.posting_date = nowdate()
 			self.picked_and_packed = 1
 			self.order_status = "Completed"
 		elif self.is_return: self.order_status = ""
-		elif apply_marketplace_workflow and not self.packing_end:
-			frappe.throw("Order status must be = To Pack and done Pack start-Pack end. {0} has invalid order status: {1}".format(self.name, self.order_status))
+		elif apply_marketplace_workflow: #and not self.packing_end:
+			if frappe.db.get_values("Sales Invoice Item", {"parent":self.name,"is_picked":"0"},"item_code"):
+				frappe.throw("Error. Unpicked items found")
+
+			#frappe.throw("Order status must be = To Pack and done Pack start-Pack end. {0} has invalid order status: {1}".format(self.name, self.order_status))
 
 
 def si_before_cancel(self, method):
@@ -876,7 +919,9 @@ def si_before_insert(self, method):
 				
 				if not flt(cstr(d.rate)):
 					d.rate = flt(cstr(d.rate or "0").replace("Rp","").replace(".","")) 
-					if d.rate: d.price_list_rate = d.rate
+				else:
+					_rate = flt(d.rate)
+				if d.rate: d.price_list_rate = d.rate
 
 				for i, row in enumerate (frappe.db.sql('''select distinct bundle.parent, bundle.item_code, bundle.qty 
 					from `tabProduct Bundle Item` bundle join `tabItem` it on bundle.item_code=it.item_code

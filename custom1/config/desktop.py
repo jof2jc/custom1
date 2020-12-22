@@ -29,5 +29,13 @@ def get_data():
 			"color": "#bdc3c7",
 			"icon": "octicon octicon-settings",
 			"type": "module"
+		},
+		{
+			"module_name": "My School",
+			"category": "Modules",
+			"label": _("School"),
+			"color": "#428B46",
+			"icon": "octicon octicon-mortar-board",
+			"type": "module",
 		},      
 	]

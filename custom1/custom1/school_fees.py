@@ -69,7 +69,8 @@ def before_insert_feepayment(self, method):
 		msg = "Transaction Date is mandatory"
 
 	else:
-		parent = frappe.get_value("Fees",{"name":self.companycode + self.customernumber},"name") or ""
+		#parent = frappe.get_value("Fees",{"name":self.companycode + self.customernumber},"name") or ""
+		parent = frappe.get_value("Fees",{"name":self.parent},"name") or ""
 		if parent:
 			fees = frappe.get_doc("Fees",parent)
 
@@ -88,7 +89,8 @@ def after_insert_feepayment(self, method):
 	fees = None
 
 	
-	parent = frappe.get_value("Fees",{"name":self.companycode + self.customernumber},"name") or ""
+	#parent = frappe.get_value("Fees",{"name":self.companycode + self.customernumber},"name") or ""
+	parent = frappe.get_value("Fees",{"name":self.parent},"name") or ""
 	if parent:
 		fees = frappe.get_doc("Fees",parent)
 
@@ -98,7 +100,8 @@ def after_insert_feepayment(self, method):
 	if msg:
 		raise frappe.ValidationError(msg)
 
-	if fees:
+	#if fees and not frappe.get_value("Payment Entry",{"reference_no":self.reference, "docstatus": "1"},"name"):
+	if fees and not self.payment_entry:
 		msg = ""
 		company = frappe.db.get_single_value('Global Defaults', 'default_company')
 		mode_of_payment = frappe.db.get_value('Mode of Payment', {'enabled':1, 'for_va_payment':1}, "name") or ""
@@ -111,31 +114,65 @@ def after_insert_feepayment(self, method):
 			"paid_amount":flt(self.paidamount),"received_amount":flt(self.paidamount),
 			"references":[{"reference_doctype":"Fees","reference_name":self.parent,"allocated_amount":self.paidamount}]})
 
-		try:
+		if payment_entry:
+			self.db_set("payment_entry",payment_entry.name)
+			#self.save()
+			
 			payment_entry.flags.ignore_permissions = True
 			payment_entry.insert()
+			self.db_set("payment_entry",payment_entry.name)
 			payment_entry.submit()
-			#msg = "Payment %s with Reference No %s is submitted successfully.Payment Voucher No: %s" % (cstr(fmt_money(self.paid_amount)), self.reference_no, payment_entry.name)
 
-			if payment_entry:
-				self.payment_entry = payment_entry.name
-				self.save()
+		if not self.payment_entry:
+			msg = "Something got wrong. Payment Entry is empty"
+			raise frappe.ValidationError(msg)
 
-		except Exception as e:
-			msg = cstr(e)
-			error_trace = frappe.get_traceback()
-			if error_trace:
-				error_log_doc = frappe.log_error(error_trace)
-			frappe.db.rollback()
+		if not msg:
+			frappe.db.commit()
+
+
+
+def update_school_fee_payment(self, method):
+	if self.docstatus > 0:
+		msg = ""
+		for d in self.references:
+			data = {}
+			if not frappe.get_value("FeePayment",{"parent":d.reference_name, "payment_entry":self.name},"payment_entry"):
+				feepayment = frappe.get_doc({
+					"doctype": "FeePayment",
+					"requestid": frappe.generate_hash("FeePayment",16),
+					"reference": self.name,
+					"transactiondate": self.posting_date,
+					"parenttype": "Fees",
+					"parentfield": "payments",
+					"parent": d.reference_name,
+					"customername": self.party_name or self.party,
+					"currencycode":"IDR",
+					"totalamount": d.total_amount,
+					"paidamount": d.allocated_amount,
+					"payment_entry": self.name
+				})
+				idx = frappe.db.sql("""select idx from `tabFeePayment` where parent=%s order by idx desc limit 1""", (d.reference_name),as_dict=0) or 0.0
+				if idx: 
+					feepayment.idx = flt(idx[0][0]) + 1
+				
+
+				feepayment.insert()
+			else:
+				msg = 'This payment reference "%s" exists in Student Fees "%s"' % (d.parent, d.reference_name)
+				#raise frappe.ValidationError(msg)
+
+			if self.docstatus == 2:
+				for row in frappe.db.get_values("FeePayment", {"payment_entry":self.name, "parent": d.reference_name}, "name"):
+					feepayment = frappe.get_doc("FeePayment",row[0])
+					if feepayment: feepayment.delete()
+		if not msg:		
+			frappe.db.commit()
 	
-	if not msg:
-		frappe.db.commit()
-	
 
 
 
-
-
+''' OLD '''
 @frappe.whitelist()
 def autocreate_school_fees_payment(self, method):
 	#frappe.msgprint("Payment %s with Reference No %s is submitted successfully" % (cstr(fmt_money(self.paid_amount)), self.reference_no))

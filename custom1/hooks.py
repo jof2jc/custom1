@@ -126,8 +126,19 @@ website_route_rules = [
 			"doctype": "Fees",
 			"parents": [{"label": _("Student Fee List"), "route": "studentfees"}]
 		}
+	},
+	{"from_route": "/studentscorecard", "to_route": "Student Score Card"},
+	{"from_route": "/studentscorecard/<path:name>", "to_route": "student_score_card_info",
+		"defaults": {
+			"doctype": "Student Score Card",
+			"parents": [{"label": _("Student Score Card Report"), "route": "studentscorecard"}]
+		}
 	}
 ]
+
+#on_session_creation = [
+#	"custom1.custom1.login.redirect_student_guardian_portal"
+#]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/custom1/css/custom1.css"
@@ -185,7 +196,7 @@ website_route_rules = [
 # 		"on_trash": "method"
 #	}
 # }
-on_session_creation = ["custom1.custom1.custom1.payment_reconciliation_onload"]
+#on_session_creation = ["custom1.custom1.custom1.payment_reconciliation_onload"]
 
 doc_events = {
     "Batch": {
@@ -216,7 +227,8 @@ doc_events = {
 	"before_insert": "custom1.custom1.custom1.si_before_insert",
 	"validate": "custom1.custom1.custom1.si_validate",
 	"before_print": "custom1.custom1.custom1.update_print_counter1",
-	"on_update": "custom1.custom1.custom1.si_after_save"
+	"on_update": "custom1.custom1.custom1.si_after_save",
+	"on_update_after_submit": "custom1.custom1.custom1.si_on_update_after_submit"
     },
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
@@ -225,8 +237,10 @@ doc_events = {
 	"before_cancel": "custom1.marketplace_flow.marketplace_flow.update_marketplace_return_on_purchase_invoice_submit_cancel"
     },
     "Payment Entry": {
-        "on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
-	"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
+        #"on_submit": "custom1.custom1.custom_imei.imp_update_installment_payment_details",
+	"before_submit": "custom1.custom1.school_fees.update_school_fee_payment",
+	"on_cancel": "custom1.custom1.school_fees.update_school_fee_payment"
+	#"before_cancel": "custom1.custom1.custom_imei.imp_before_cancel_installment_payment"
 	#"onload": "custom1.custom1.custom1.get_outstanding_invoices_onload_pe"
     },
     "Payment Reconciliation": {
@@ -239,7 +253,13 @@ doc_events = {
     "FeePayment": {
 	"before_insert": "custom1.custom1.school_fees.before_insert_feepayment",
 	"after_insert": "custom1.custom1.school_fees.after_insert_feepayment"
-    }
+    },
+    "Guardian": {
+	"validate": "custom1.my_school.my_school.auto_create_user"
+    },
+    "Instructor": {
+	"validate": "custom1.my_school.my_school.auto_create_user"
+    },
 }
 
 

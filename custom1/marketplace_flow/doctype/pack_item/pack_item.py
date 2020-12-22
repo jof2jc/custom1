@@ -22,6 +22,9 @@ class PackItem(Document):
 
 		return "and {}".format(" and ".join(conditions)) if conditions else ""
 
+	def scan_start(self):
+		frappe.msgpritn("test")
+
 	def load_item_details(self):
 		scan_data=""
 		if self.type == "Scan Start" and self.scan_start:
@@ -30,8 +33,10 @@ class PackItem(Document):
 			scan_data = self.scan_end.strip()
 
 		if not scan_data: return
-		
+
 		item_log = []
+		log_message = {"messages": item_log, "error_flag": "0"}
+
 		def log(**kwargs):
 			item_log.append(kwargs)
 
@@ -53,19 +58,19 @@ class PackItem(Document):
 			return
 
 		if doc:
-			if doc.order_status not in ("To Pack") and doc.docstatus == 0:
+			if doc.order_status not in ("To Pack") or doc.docstatus !=1:
 				self.status = 'Status "%s" is invalid: %s' % (doc.name, doc.order_status)
 				return
-			elif doc.docstatus == 1 :
-				self.status = '"%s" is submitted. Status: %s' % (scan_data, doc.order_status)
+			elif doc.docstatus == 1 and doc.order_status == "Completed":
+				self.status = 'Double pack - Invalid. "%s" was already completed. Status: %s' % (scan_data, doc.order_status)
 				return
 			elif doc.docstatus == 2 :
-				self.status = '"%s" is cancelled. Status: %s' % (scan_data, doc.order_status)
+				self.status = 'Error. "%s" is cancelled. Status: %s' % (scan_data, doc.order_status)
 				return
 
 		elif not doc:
 			self.status = '"%s" not found' % (scan_data)
-			return log_message
+			return
 
 
 		conditions = ""
@@ -76,7 +81,7 @@ class PackItem(Document):
 			si_item.item_code,si_item.item_name, si_item.qty, si_item.is_picked, ifnull(f.thumbnail_url,'') as image
 			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si.name=si_item.parent
 			join `tabItem` it on it.item_code=si_item.item_code left join `tabFile` f on f.attached_to_name=it.item_code
-			where si.order_status in ('To Pack') and (ifnull(no_online_order,'') != '' or ifnull(awb_no,'') != '') and si.is_return=0 and si.docstatus=0 and 
+			where si.order_status in ('To Pack') and (ifnull(no_online_order,'') != '' or ifnull(awb_no,'') != '') and si.is_return=0 and si.docstatus=1 and 
 			(si.no_online_order=%s or si.awb_no=%s) {conditions}""".format(conditions=conditions), (scan_data, scan_data), as_dict=1)
 
 
@@ -106,9 +111,9 @@ class PackItem(Document):
 				self.status = msg
 				return
 
-			if not doc.packing_start and doc.order_status in ("To Pack") and doc.docstatus == 0: 
-				doc.packing_start = now_datetime()
-				doc.save()
+			if not doc.packing_start and doc.order_status in ("To Pack") and doc.docstatus == 1: 
+				doc.db_set("packing_start", now_datetime())
+				#doc.save()
 
 				''' insert marketplace scorecard '''
 				if not frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}) and \
@@ -130,21 +135,23 @@ class PackItem(Document):
 
 		elif doc and self.type == "Scan End":
 			validate_mandatory(doc)
-			if doc.order_status in ("To Pack") and doc.docstatus == 0: 
+			if doc.order_status in ("To Pack") and doc.docstatus == 1: 
 				if not doc.packing_end or doc.amended_from:	
-					doc.packing_end = now_datetime()
+					doc.db_set("packing_end",now_datetime())
 
-					#submit invoice
+					#submit invoice /// moved to Pick Item
+					'''
 					doc.flags.ignore_permissions = True
 					doc.posting_date = nowdate()
 					doc.posting_time = nowtime()
 
 					doc.delivery_date = nowdate()
-					doc.picked_and_packed = 1
-					doc.order_status = "Completed"
+					'''
+					doc.db_set("picked_and_packed", 1)
+					doc.db_set("order_status","Completed")
 
-					doc.save()
-					doc.submit()
+					#doc.save()
+					#doc.submit()
 
 					#update score_card time_end
 					if frappe.db.exists("Marketplace Fulfillment Score Card",{"transaction_ref_no":doc.name, "type":"Packer"}):
@@ -161,7 +168,7 @@ class PackItem(Document):
 
 					frappe.db.commit()
 			
-					self.status = '"%s" is submitted successfully' % (doc.name)
+					self.status = 'Completed "%s" successfully' % (doc.name)
 				else:
 					self.status = '"%s" is already scanned end' % (doc.name)
 

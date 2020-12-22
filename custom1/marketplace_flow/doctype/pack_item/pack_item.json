@@ -33,6 +33,7 @@
    "default": "0",
    "fieldname": "send_to_qc",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Send To QC",
    "read_only": 1
   },
@@ -57,7 +58,7 @@
    "label": "Scan Start"
   },
   {
-   "description": "Automatically will submit invoice",
+   "description": "Automatically set Order Status to Completed",
    "fieldname": "scan_end",
    "fieldtype": "Data",
    "label": "Scan End"
@@ -96,7 +97,7 @@
   }
  ],
  "issingle": 1,
- "modified": "2020-06-10 18:45:10.313366",
+ "modified": "2020-11-09 07:32:25.738933",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Pack Item",

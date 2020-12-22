@@ -19,10 +19,10 @@ def get_context(context):
 
 	#if not frappe.has_website_permission(context.doc):
 	#	frappe.throw(_("Not Permitted"), frappe.PermissionError)
-	
+
 	if not frappe.session.user or frappe.session.user == 'Guest':
 		frappe.throw(_("You need to be logged in to access this page"), frappe.PermissionError)
-
+	
 	default_print_format = frappe.db.get_value('Property Setter', dict(property='default_print_format', doc_type=frappe.form_dict.doctype), "value")
 	if default_print_format:
 		context.print_format = default_print_format

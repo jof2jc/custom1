@@ -7,14 +7,15 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.user import is_website_user
 
-class FeeBill(Document):
+class StudentScoreCard(Document):
 	pass
 
 def has_website_permission(doc, ptype, user, verbose=False):
 	return True
 
-def get_student_fees_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="modified"):
-	#frappe.throw("custom list MP Courier: " + str(doctype), frappe.PermissionError)
+def get_student_score_card_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="modified"):
+	if not frappe.session.user or frappe.session.user == 'Guest':
+		frappe.throw(_("You need to be logged in to access this page"), frappe.PermissionError)
 
 	from frappe.www.list import get_list
 
@@ -25,10 +26,11 @@ def get_student_fees_list(doctype, txt, filters, limit_start, limit_page_length=
 	student_list = []
 	for student in frappe.get_list('Student Guardian', {'guardian': guardian}, 'parent'):
 		student_list.append(student.parent)
+	#frappe.throw(guardian + is_website_user())
 
 	ignore_permissions = False
-	doctype = "Fees"
-	if is_website_user() and student:
+	doctype = "Student Score Card"
+	if guardian:
 		if not filters: filters = []
 
 		#filters["docstatus"] = 1
@@ -47,6 +49,7 @@ def get_list_context(context=None):
 		"show_sidebar": True,
 		"show_search": True,
 		"no_breadcrumbs": True,
-		"get_list": get_student_fees_list,
-		"row_template": "templates/includes/student_fees/student_fees_row.html"
+		"title": "Student Score",
+		"get_list": get_student_score_card_list,
+		"row_template": "templates/includes/student_score_card/student_score_card_row.html"
 	}

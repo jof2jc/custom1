@@ -11,7 +11,7 @@ def execute(filters=None):
 	sl_entries = get_stock_ledger_entries(filters)
 	item_details = get_item_details(filters)
 	opening_row = get_opening_balance(filters, columns)
-        party_details = {}
+        party_details = get_party_details(filters)
 	party = []
 	
 	data = []
@@ -22,11 +22,11 @@ def execute(filters=None):
 	for sle in sl_entries:
 		item_detail = item_details[sle.item_code]
                 
-		party_details = get_party_details(sle.item_code, sle.voucher_type, sle.voucher_no)
-		if sle.voucher_type in ("Sales Invoice", "Purchase Invoice", "Purchase Receipt", "Delivery Note"): 
-			party = party_details[sle.voucher_no]
-		else:	
-			party = []
+		#party_details = get_party_details(sle.item_code, sle.voucher_type, sle.voucher_no)
+		#if sle.voucher_type in ("Sales Invoice", "Purchase Invoice", "Purchase Receipt", "Delivery Note"): 
+		#	party = party_details[sle.voucher_no]
+		#else:	
+		party = party_details.get(sle.item_code).get(sle.voucher_no) if party_details.get(sle.item_code) else None
 		
 		if "Simple CEO" not in frappe.get_roles(frappe.session.user):
 			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
@@ -34,18 +34,18 @@ def execute(filters=None):
 				sle.warehouse,
 				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
 				(sle.incoming_rate if sle.actual_qty > 0 and "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
-				(party.outgoing_rate if party else 0.0), 
+				(party.get("outgoing_rate") if party else 0.0), 
 				(sle.valuation_rate if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), 
-				(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.party if party else ""), 
-				sle.voucher_type, sle.voucher_no, (party.party_type if party else ""),
+				(sle.stock_value if "Accounts Manager" in frappe.get_roles(frappe.session.user) else 0.0), (party.get("party_name") if party else ""), 
+				sle.voucher_type, sle.voucher_no, (party.get("party_type") if party else ""),
 				sle.batch_no, sle.serial_no, sle.company])
 		else:
 			data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
 				item_detail.brand, #item_detail.description, 
 				sle.warehouse,
 				item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
-				sle.incoming_rate, (party.outgoing_rate if party else 0.0), #sle.valuation_rate, 
-				(party.party if party else "")
+				sle.incoming_rate, (party.get("outgoing_rate") if party else 0.0), #sle.valuation_rate, 
+				(party.get("party_name") if party else "")
 			])
 
 	return columns, data
@@ -93,10 +93,43 @@ def get_item_details(filters):
 
 	return item_details
 
-def get_party_details(item_code,voucher_type,voucher_no):
+def get_party_details(filters):
 	party_details = {}
 
- 	params = {
+	party_list = frappe.db.sql("""select * from (
+							select dt_item.parent, dt_item.item_code, dt.customer as party_name, 'Customer' as party_type, rate as outgoing_rate
+							from `tabSales Invoice` dt, `tabSales Invoice Item` dt_item
+							where dt.name = dt_item.parent and dt.docstatus=1 and dt.posting_date between %(from_date)s and %(to_date)s {party_conditions} 
+
+							union
+
+							select dt_item.parent, dt_item.item_code, dt.customer as party_name, 'Customer' as party_type, rate as outgoing_rate
+							from `tabDelivery Note` dt, `tabDelivery Note Item` dt_item
+							where dt.name = dt_item.parent and dt.docstatus=1 and dt.posting_date between %(from_date)s and %(to_date)s {party_conditions}
+
+							union
+
+							select dt_item.parent, dt_item.item_code, dt.supplier as party_name, 'Supplier' as party_type, 0.0 as outgoing_rate
+							from `tabPurchase Receipt` dt, `tabPurchase Receipt Item` dt_item
+							where dt.name = dt_item.parent and dt.docstatus=1 and dt.posting_date between %(from_date)s and %(to_date)s {party_conditions}
+
+							union
+
+							select dt_item.parent, dt_item.item_code, dt.supplier as party_name, 'Supplier' as party_type, 0.0 as outgoing_rate
+							from `tabPurchase Invoice` dt, `tabPurchase Invoice Item` dt_item
+							where dt.name = dt_item.parent and dt.docstatus=1 and dt.posting_date between %(from_date)s and %(to_date)s {party_conditions}
+				) result""".format(party_conditions=get_party_conditions(filters)), filters, as_dict=1)
+
+	for d in party_list:
+		party_details.setdefault(d.item_code, {}).setdefault(d.parent,{}).setdefault("party_type", d.party_type)
+		party_details.setdefault(d.item_code, {}).setdefault(d.parent,{}).setdefault("party_name", d.party_name)
+		party_details.setdefault(d.item_code, {}).setdefault(d.parent,{}).setdefault("outgoing_rate", d.outgoing_rate)
+	
+	return party_details
+
+
+	''' OLD
+	params = {
 		'item_code' : item_code,
 		'voucher_no' : voucher_no,
          	'voucher_type' : voucher_type
@@ -124,12 +157,23 @@ def get_party_details(item_code,voucher_type,voucher_no):
 			party_details.setdefault(party.parent, party)
 
 	return party_details
+	'''
 
 
-def get_party_conditions(item_code, voucher_no):
+def get_party_conditions(filters):
 	conditions = []
-	#parent_item = ""
+	if filters.get("item_code"):
+		conditions.append("item_code=%(item_code)s")
+	if filters.get("warehouse"):
+		conditions.append("warehouse=%(warehouse)s")
+	if filters.get("voucher_no"):
+		conditions.append("parent=%(voucher_no)s")
 
+	#conditions.append("posting_date between %(from_date)s and %(to_date)s")
+
+	return "and {}".format(" and ".join(conditions)) if conditions else ""
+
+	''' OLD
 	parent_item = frappe.db.sql("""Select pb.name from `tabProduct Bundle` pb, `tabProduct Bundle Item` pi 
 			Where pb.name=pi.parent and pi.item_code=%s limit 1""", item_code, as_dict=0)
 	#if voucher_no == "MS/17/10/380" and item_code in ("EASY T LANCET STRIP MEDILANCE@","EASY TOUCH GLUKOSA STRIP@"):
@@ -143,6 +187,7 @@ def get_party_conditions(item_code, voucher_no):
 		conditions.append("dt_item.parent=%(voucher_no)s")
 
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
+	'''
 
 def get_item_conditions(filters):
 	conditions = []

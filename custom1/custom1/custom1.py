@@ -169,8 +169,8 @@ def set_pi_autoname(doc, method):
 	'''
 
 def validate_delivered_qty(self, method):
-	for r in frappe.db.sql("select item_code,so_detail,count(so_detail) as so_detail_count,against_sales_order 
-		from `tabDelivery Note Item` where parent=%s group by item_code, so_detail", (self.name), as_dict=1):
+	for r in frappe.db.sql("""select item_code,so_detail,count(so_detail) as so_detail_count,against_sales_order 
+		from `tabDelivery Note Item` where parent=%s group by item_code, so_detail""", (self.name), as_dict=1):
 		if flt(r.so_detail_count) > 1:
 			frappe.throw(_("Double Sales Order Item found. Over-Delivery for Item %s" % (r.item_code)))
 

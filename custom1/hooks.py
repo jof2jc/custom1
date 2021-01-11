@@ -13,7 +13,11 @@ app_version = "0.0.1"
 
 fixtures = [    
 		{
-        		"doctype": "Note"
+        		"doctype": "Report",
+			"filters": {
+        				"ref_doctype": ["in", ["Sales Invoice"]],
+					"name": ["in", ["eFaktur"]]
+        		}
     		}
 ]
 

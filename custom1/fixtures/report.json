@@ -1,0 +1,31 @@
+[
+ {
+  "add_total_row": 0, 
+  "apply_user_permissions": 1, 
+  "disabled": 0, 
+  "docstatus": 0, 
+  "doctype": "Report", 
+  "is_standard": "No", 
+  "javascript": null, 
+  "json": "{\"add_total_row\": 0, \"sort_by\": \"Sales Order.posting_date\", \"add_totals_row\": 0, \"sort_order\": \"desc\", \"sort_by_next\": \"Sales Order.posting_date\", \"filters\": [[\"Sales Taxes and Charges\", \"description\", \"like\", \"%PPN%\"], [\"Sales Order\", \"docstatus\", \"!=\", \"2\"], [\"Sales Order\", \"docstatus\", \"=\", \"1\"], [\"Sales Order\", \"company\", \"=\", \"PT DIESELINDO UTAMA NUSA\"]], \"sort_order_next\": \"desc\", \"columns\": [[\"name\", \"Sales Order\"], [\"company\", \"Sales Order\"], [\"status\", \"Sales Order\"], [\"posting_date\", \"Sales Order\"], [\"customer\", \"Sales Order\"], [\"address_display\", \"Sales Order\"], [\"tax_id\", \"Sales Order\"], [\"included_in_print_rate\", \"Sales Taxes and Charges\"], [\"net_total\", \"Sales Order\"], [\"tax_amount_after_discount_amount\", \"Sales Taxes and Charges\"], [\"description\", \"Sales Taxes and Charges\"], [\"item_code\", \"Sales Order Item\"], [\"item_name\", \"Sales Order Item\"], [\"qty\", \"Sales Order Item\"], [\"price_list_rate\", \"Sales Order Item\"], [\"discount_percentage\", \"Sales Order Item\"], [\"rate\", \"Sales Order Item\"], [\"amount\", \"Sales Order Item\"], [\"grand_total\", \"Sales Order\"], [\"additional_discount_percentage\", \"Sales Order\"], [\"total\", \"Sales Order\"]]}", 
+  "letter_head": null, 
+  "modified": "2019-04-30 11:22:14.119206", 
+  "module": "Accounts", 
+  "name": "eFaktur", 
+  "query": null, 
+  "ref_doctype": "Sales Order", 
+  "report_name": "eFaktur SO", 
+  "report_type": "Report Builder", 
+  "roles": [
+   {
+    "role": "System Manager"
+   }, 
+   {
+    "role": "Accounts Manager"
+   }, 
+   {
+    "role": "Accounts User"
+   }
+  ]
+ }
+]

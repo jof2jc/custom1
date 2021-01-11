@@ -28,7 +28,7 @@ frappe.views.ReportView.prototype.make_export = function(doc){
 				}, __("Export: {0}",[__(me.doctype)]), __("Download"));
 
 		}, true); 
-		if (this.docname == "eFaktur"){
+		if (this.docname == "eFaktur" || this.docname == "eFaktur SO"){
 			var export_btn = this.page.add_menu_item(__('Export eFaktur'), function() {
 			var args = me.get_args();
 			var selected_items = me.get_checked_items()

@@ -205,7 +205,8 @@ doc_events = {
 	"on_cancel": "custom1.custom1.bank_clearing.update_bank_clearing_voucher"
     },
     "Delivery Note": {
-	"validate": "custom1.custom1.custom1.validate_delivered_qty"
+	"validate": "custom1.custom1.custom1.validate_delivered_qty",
+	"before_submit": "custom1.custom1.custom1.validate_delivered_qty_before_submit"
     }
 }
 

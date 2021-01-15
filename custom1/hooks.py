@@ -11,6 +11,7 @@ app_color = "grey"
 app_email = "jof2jc@gmail.com"
 app_version = "0.0.1"
 
+'''
 fixtures = [    
 		{
         		"doctype": "Custom Script"
@@ -21,12 +22,18 @@ fixtures = [
 fixtures = [    
 		{
         		"doctype": "Custom Field",
-		        "dt": ["in", ["Journal Entry"]],
-				        "fieldname": ["in", ["sc_expenses","expenses"]]
+		        "filters": {
+        				"dt": ["in", ["Landed Cost Voucher","Landed Cost Item","Item"]]
+        		}
+    		},
+		{
+        		"doctype": "Custom Script",
+			"filters": {
+        				"dt": ["in", ["Landed Cost Voucher"]]
+        		}
     		}
 ]
 
-'''
 '''
 fixtures = [    
 		{
@@ -230,6 +237,12 @@ doc_events = {
 	"on_update": "custom1.custom1.custom1.si_after_save",
 	"on_update_after_submit": "custom1.custom1.custom1.si_on_update_after_submit"
     },
+    "Sales Order": {
+	"on_update_after_submit": "custom1.marketplace_flow.marketplace_integration.auto_create_sales_invoice_based_on_sales_order_update"
+    },
+    "Bin": {
+	"on_update": "custom1.marketplace_flow.marketplace_integration.update_stock_for_marketplace_item"
+    },	
     "Purchase Invoice": {
         "on_submit": "custom1.custom1.custom_imei.set_return_details",
 	"on_cancel": "custom1.custom1.custom_imei.set_return_details",
@@ -255,10 +268,12 @@ doc_events = {
 	"after_insert": "custom1.custom1.school_fees.after_insert_feepayment"
     },
     "Guardian": {
-	"validate": "custom1.my_school.my_school.auto_create_user"
+	"validate": "custom1.my_school.my_school.auto_create_update_user",
+	"after_rename": "custom1.my_school.my_school.update_user_after_rename"
     },
     "Instructor": {
-	"validate": "custom1.my_school.my_school.auto_create_user"
+	"validate": "custom1.my_school.my_school.auto_create_update_user",
+	"after_rename": "custom1.my_school.my_school.update_user_after_rename"
     },
 }
 

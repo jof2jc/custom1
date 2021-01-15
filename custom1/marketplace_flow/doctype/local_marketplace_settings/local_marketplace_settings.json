@@ -7,7 +7,9 @@
   "sc_01",
   "ignore_insufficient_stock",
   "ignore_courier_master_check",
-  "allow_submit_invoice_on_import"
+  "allow_submit_invoice_on_import",
+  "sc_02",
+  "api_partner_id"
  ],
  "fields": [
   {
@@ -34,10 +36,20 @@
    "fieldname": "allow_submit_invoice_on_import",
    "fieldtype": "Check",
    "label": "Allow Submit Invoice On Import"
+  },
+  {
+   "fieldname": "sc_02",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "api_partner_id",
+   "fieldtype": "Data",
+   "label": "API Partner ID"
   }
  ],
  "issingle": 1,
- "modified": "2020-08-01 11:34:06.281963",
+ "modified": "2020-12-29 10:44:29.336457",
  "modified_by": "Administrator",
  "module": "Marketplace Flow",
  "name": "Local Marketplace Settings",

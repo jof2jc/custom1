@@ -176,10 +176,14 @@ def set_si_autoname(doc, method):
 		is_online_shop = frappe.db.get_value("Company", doc.company, "is_online_shop")
 
 		if doc.no_online_order and len(cstr(doc.no_online_order)) >= 10:
-			if not doc.is_return:
-				doc.name = doc.no_online_order 
-			else:
-				doc.name = "R/" + doc.no_online_order
+			doc.name = doc.no_online_order
+
+			if doc.doctype == "Sales Invoice":
+				if not doc.is_return:
+					doc.name = doc.no_online_order 
+				else:
+					doc.name = "R/" + doc.no_online_order
+			
 	
 @frappe.whitelist()
 def set_pi_autoname(doc, method):
@@ -736,8 +740,8 @@ def populate_prev_items(ref_no):
 		return message
 
 def si_before_insert(self, method):
-	if self.company: #make sure only import online_order
-		return
+	#if self.company: #make sure only import online_order
+	#	return
 	#company = frappe.db.get_value("Global Defaults", None, "default_company") 
 	company = frappe.db.get_single_value('Global Defaults', 'default_company')
 
@@ -757,7 +761,7 @@ def si_before_insert(self, method):
 	cost_center = ""
 
 	# make sure no double order_no
-	if self.naming_series and len(cstr(self.naming_series)) >= 10:
+	if self.naming_series and len(cstr(self.naming_series)) >= 10 and not self.no_online_order:
 		no_online_order = self.naming_series.strip()
 		self.no_online_order = cstr(no_online_order)
 
@@ -766,9 +770,9 @@ def si_before_insert(self, method):
 		else:
 			self.name = cstr(self.no_online_order)
 
-		same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
-		if self.no_online_order and same_invoice:
-			frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
+	same_invoice = frappe.db.sql('''select no_online_order from `tabSales Invoice` where docstatus <= 1 and is_return != 1 and no_online_order=%s limit 1''', self.no_online_order.strip(), as_dict=0)
+	if self.no_online_order and same_invoice:
+		frappe.throw(_("Same Invoice No exists : {0}").format(self.no_online_order))
 
 	#make sure only import order yg sudah diproses
 	status_order = ["HARUS DIKIRIM","MENUNGGU DIPICKUP","SIAP DIKIRIM","AKAN DIKIRIM","SUDAH DIPROSES","PERLU DIKIRIM","SEDANG DIPROSES","READY TO SHIP","READY_TO_SHIP","DIPROSES PELAPAK"]
@@ -793,7 +797,8 @@ def si_before_insert(self, method):
 				elif "TRIMATARI BIO" in company.upper():
 					self.order_status = "To Pick"
 
-				self.pending_remarks = order_status
+				if not self.pending_remarks:
+					self.pending_remarks = order_status
 			else: 
 				self.order_status = "Pending"
 				self.pending_remarks = order_status
@@ -839,8 +844,9 @@ def si_before_insert(self, method):
 		frappe.throw(_("Invalid date format: {0}").format(cstr(self.posting_date)))
 	else:
 		if "order_date" in frappe.db.get_table_columns(self.doctype):
-			order_datetime = get_datetime(cstr(self.posting_date))
-			self.order_date = order_datetime #cstr(getdate(cstr(self.posting_date)))
+			if not self.order_date:
+				order_datetime = get_datetime(cstr(self.posting_date))
+				self.order_date = order_datetime #cstr(getdate(cstr(self.posting_date)))
 
 		self.posting_time = nowtime() or get_time("23:59:00") #datetime.datetime.strptime("23:59:59", "%H:%M:%S")
 		self.posting_date = nowdate() #cstr(getdate(cstr(self.posting_date))) #cstr(getdate(cstr(self.posting_date)))
@@ -1050,7 +1056,7 @@ def si_before_insert(self, method):
 
 	#set package_weight
 	if "package_weight" in frappe.db.get_table_columns(self.doctype):
-		if self.package_weight:
+		if not flt(cstr(self.package_weight)) and self.package_weight:
 			if "GR" in self.package_weight.upper():
 				self.package_weight = flt(cstr(self.package_weight).split(" ")[0],3)/1000.0 #convert to kg
 			elif "KG" in self.package_weight.upper():

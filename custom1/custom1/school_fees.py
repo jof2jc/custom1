@@ -109,7 +109,7 @@ def after_insert_feepayment(self, method):
 
 		payment_entry = frappe.get_doc({"doctype":"Payment Entry","naming_series":self.parent + "~PE/.YY./.MM./.###",
 			"company":company, "reference_no":self.reference,"reference_date":getdate(self.transactiondate),
-			"payment_type":"Receive","posting_date":nowdate(),"party_type":"Student",
+			"payment_type":"Receive","posting_date":getdate(self.transactiondate) or nowdate(),"party_type":"Student",
 			"party":fees.student,"mode_of_payment":mode_of_payment,"paid_from":fees.receivable_account,"paid_to":paid_to_account,
 			"paid_amount":flt(self.paidamount),"received_amount":flt(self.paidamount),
 			"references":[{"reference_doctype":"Fees","reference_name":self.parent,"allocated_amount":self.paidamount}]})
@@ -133,7 +133,7 @@ def after_insert_feepayment(self, method):
 
 
 def update_school_fee_payment(self, method):
-	if self.docstatus > 0:
+	if self.docstatus > 0 and frappe.get_value("Company",self.company,"domain") == "Education":
 		msg = ""
 		for d in self.references:
 			data = {}

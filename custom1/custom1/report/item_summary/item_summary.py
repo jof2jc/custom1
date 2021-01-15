@@ -159,10 +159,12 @@ def get_avg_sales_qty(item_code):
 
 	return sales_avg.get(item_code,0)
 
-def get_pl_conditions(filters):
+def get_pl_conditions(filters, tup_pl=()):
 	conditions = []
 	if filters.get("item_code"):
 		conditions.append("ip.item_code=%(item_code)s")
+	if tup_pl:
+		conditions.append("ip.price_list in {0}".format(tup_pl))
 
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
 
@@ -171,18 +173,25 @@ def get_price_list(filters):
 	"""Get selling & buying price list of every item"""
 
 	rate = {}
+	from frappe.permissions import has_user_permission, get_user_permissions
+
+	lst = []
+	if get_user_permissions(frappe.session.user).get("Price List"):
+		for d in get_user_permissions(frappe.session.user).get("Price List"):
+			lst.append(d.doc)
+
+	tup_pl = tuple(lst)
 
 	price_list = frappe.db.sql("""select ip.item_code, ip.buying, ip.selling, ip.price_list,
 		concat(ifnull(cu.symbol,ip.currency), " ", FORMAT(ip.price_list_rate,2), " - ", ip.price_list) as price
 		from `tabItem Price` ip, `tabPrice List` pl, `tabCurrency` cu
 		where ip.price_list=pl.name and pl.currency=cu.name and pl.enabled=1 and ip.selling=1 {pl_conditions} order by ip.price_list"""\
-		.format(pl_conditions=get_pl_conditions(filters)), filters, as_dict=1)
-
-	from frappe.permissions import has_user_permission
+		.format(pl_conditions=get_pl_conditions(filters, tup_pl)), filters, as_dict=1)
 
 	for j in price_list:
-		if j.price and has_user_permission(frappe.get_doc("Price List", j.price_list), frappe.session.user):
-			rate.setdefault(j.item_code, {}).setdefault("Buying" if j.buying else "Selling", []).append(j.price)
+		#if j.price and has_user_permission(frappe.get_doc("Price List", j.price_list), frappe.session.user):
+		rate.setdefault(j.item_code, {}).setdefault("Buying" if j.buying else "Selling", []).append(j.price)
+
 	item_rate_map = {}
 	#print rate
 

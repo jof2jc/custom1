@@ -60,35 +60,47 @@ def auto_create_sales_invoice_based_on_sales_order_update(self):
 				inv.pending_remarks = self.order_status
 				inv.order_status = "SUDAH DIPROSES"
 				inv.package_weight = inv.total_net_weight
+	
 				try:
 					inv.insert()
 					frappe.db.commit()
+					print("creating sales invoice for %s: %s" % (inv.name, inv.awb_no))
 				except Exception as e:
 					error_trace = frappe.get_traceback()
 					if error_trace: 
 						frappe.log_error(error_trace)
 
-		update_so_based_on_order_status(self)
+		#update_so_based_on_order_status(self)
 
-def update_so_based_on_order_status(so, order_items_data=None):
+def update_so_based_on_order_status(so, order_items_data=None, order_status="", tracking_no=""):
+	courier = ""
 	if order_items_data:
 		for item in order_items_data:
-			so.db_set("order_status", item.get('status'))
-			so.db_set("awb_no", item.get('tracking_code'))
-			so.db_set("courier", item.get('shipment_provider'))
+			order_status = item.get('status')
+			tracking_no = item.get('tracking_code')
+			courier = item.get('shipment_provider')
 			break
+	if order_status and tracking_no:
+		if so.order_status != order_status: so.db_set("order_status", order_status)
+		if so.awb_no != tracking_no: so.db_set("awb_no", tracking_no)
+		if courier and so.courier != courier: so.db_set("courier", courier)
 
 	if not so.get("order_status"): return
 
 	if ("CANCEL" in so.order_status.upper()) or ("BATAL" in so.order_status.upper()) or ("FAILED" in so.order_status.upper()):
 		try:
-			so.cancel()
+			if so.docstatus == 1:
+				so.cancel()
 
 		except Exception as e:
 			error_trace = frappe.get_traceback()
 			if error_trace: 
 				frappe.log_error(error_trace)
+
 	frappe.db.commit()
+	if so.awb_no:
+		auto_create_sales_invoice_based_on_sales_order_update(so)
+
 	print("Updated %s data= %s, %s" % (so.name, so.order_status, so.awb_no))
 
 def update_stock_for_marketplace_item(self, method):
@@ -100,43 +112,52 @@ def update_stock_for_marketplace_item(self, method):
 		item = self
 		if item.warehouse != api_doc.marketplace_warehouse: continue
 
+	
 		for r in api_doc.get('api_end_point',{'disabled':0,'type':'Update Stock'}):
-			headers = json.loads(r.header.strip())
-			body = {} 
+			if api_doc.marketplace_type == "Lazada":
+				access_token = get_lazada_token(api_doc)
+				if access_token:
+					try:
+						response = get_lazada_response(r, api_doc, access_token, d=None, item=item)
+					except Exception as e:
+						err_flag = 1
+						error_trace = frappe.get_traceback()
+						if error_trace: 
+							frappe.log_error(error_trace)
 
-			if headers and r.body:
-				for k,v in json.loads(r.body.strip()).items():
-					body.update({k:eval(v)})
+			else:
+				headers = json.loads(r.header.strip())
+				body = {} 
 
-			if r.end_point and body:
-				signature = generate_signature(api_doc, r.end_point, r.method, BodyString=json.dumps(body))
-				headers["Authorization"] = signature
+				if headers and r.body:
+					for k,v in json.loads(r.body.strip()).items():
+						body.update({k:eval(v)})
 
-			if body.get("item_id") or body.get("variation_id"):
-				try:
-					result = make_api_request(r.end_point, r.method, headers, json.dumps(body))
-				except Exception as e:
-					err_flag = 1
-					error_trace = frappe.get_traceback()
-					if error_trace: 
-						frappe.log_error(error_trace)
+				if r.end_point and body:
+					signature = generate_signature(api_doc, r.end_point, r.method, BodyString=json.dumps(body))
+					headers["Authorization"] = signature
+
+				if body.get("item_id") or body.get("variation_id"):
+					try:
+						result = make_api_request(r.end_point, r.method, headers, json.dumps(body))
+					except Exception as e:
+						err_flag = 1
+						error_trace = frappe.get_traceback()
+						if error_trace: 
+							frappe.log_error(error_trace)
 			
 
 
 def insert_new_sales_order(api_doc, d, order_items_data, r):
 	order_id = d.get("ordersn") or d.get("order_id")
 	if frappe.db.exists("Sales Order",{"name": order_id}): 
-		if d.get("order_id"): #lazada, check for order update
-			'''
-			val = frappe.db.get_values("Sales Order", {"name":d.get("order_id"),"docstatus":1}, ["awb_no","order_status"])
-			if val:
-				frappe.db.set_value("Sales Order",d.get("order_id"),{
-					"awb_no": d.get("tracking_code") if val[0][0] != d.get("tracking_code") else val[0][0],
-					"order_status": d.get("status") if val[0][1] != d.get("status") else val[0][1]
-				})
-			'''
-			update_so_based_on_order_status(frappe.get_doc("Sales Order",{"name":d.get("order_id")}), order_items_data)
-		print("%s exists. Skip inserting new order" % (d.get("ordersn") or d.get("order_id")))
+		order_status = d.get("status") or d.get("order_status")	
+		tracking_no = d.get("tracking_code") or d.get("tracking_no")
+
+		#check and perform order update
+		update_so_based_on_order_status(frappe.get_doc("Sales Order",{"name":order_id}), order_items_data, order_status, tracking_no)
+
+		print("%s exists. Skip inserting new order" % (order_id))
 		return
 	
 
@@ -188,7 +209,7 @@ def insert_new_sales_order(api_doc, d, order_items_data, r):
 
 	if not so.get("order_status"): return #order_status is mandatory
 
-	if ("CANCEL" in so.order_status.upper()) or ("BATAL" in so.order_status.upper()):
+	if ("CANCEL" in so.order_status.upper()) or ("BATAL" in so.order_status.upper()) or ("FAILED" in so.order_status.upper()):
 		so.update({"docstatus":0})
 	else: so.update({"docstatus":1})
 					
@@ -201,9 +222,23 @@ def insert_new_sales_order(api_doc, d, order_items_data, r):
 		error_trace = frappe.get_traceback()
 		if error_trace: 
 			frappe.log_error(error_trace)
-	
 
-def get_lazada_response(t, api_doc, access_token='', d=None):
+
+def get_lazada_token(api_doc):
+	access_token = ""
+	for t in api_doc.get("api_end_point",{"disabled":0,"type":("in",["Refresh Token"])}):
+		response = get_lazada_response(t, api_doc, access_token='')
+		access_token = response.body.get("access_token") or ""
+						
+		if access_token:
+			t.db_set("access_token", access_token)
+			t.db_set("refresh_token", response.body.get("refresh_token") or "")
+			
+			frappe.db.commit()	
+
+	return access_token or ""
+
+def get_lazada_response(t, api_doc, access_token='', d=None, item=None):
 	r = t
 	client = request = response = created_before = None
 
@@ -212,7 +247,11 @@ def get_lazada_response(t, api_doc, access_token='', d=None):
 	request = eval(headers.get("request"))	
 	created_before = eval(headers.get("created_before")) if headers.get("created_before") and access_token else None
 
-	#print("created_before ", created_before)
+	if headers.get("payload") and access_token and item:
+		item_id = frappe.get_value('Marketplace Items', {'parent': item.item_code,'marketplace_store':api_doc.name},'item_id') or ""
+		qty = cstr(cint(item.get('projected_qty') if item.get('projected_qty') >=0 else item.get('actual_qty')))
+		payload = eval(headers.get("payload").replace("[item_id]",item_id).replace("[sku]",item.item_code).replace("[actual_qty]", qty))
+
 
 	for k,v in headers.items():
 		if "param" in k: eval(v)

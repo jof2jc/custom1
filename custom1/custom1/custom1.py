@@ -833,7 +833,7 @@ def si_before_insert(self, method):
 			self.marketplace_courier = courier[0][0]
 			self.courier_type = values[1] or ""
 		elif not ignore_courier_master_check:
-			frappe.throw(_("Marketplace Courier master not found using keyword '{0}'. Order No: {1}").format(self.courier, cstr(no_online_order)))
+			frappe.throw(_("Marketplace Courier master not found using keyword '{0}'. Order No: {1}").format(self.courier, cstr(self.no_online_order)))
 
 
 	self.status = "Draft"
@@ -938,7 +938,7 @@ def si_before_insert(self, method):
 					#new_row.parent = self.name
 					new_row.item_code = row.item_code
 					new_row.qty = flt(row.qty) * flt(d.qty)
-					new_row.rate = d.rate / (bundle_qty*d.qty) or 0.0
+					new_row.rate = flt(d.rate) / (flt(bundle_qty)*flt(d.qty)) or 0.0
 					#items.append(new_row)
 
 		#if items != self.items:
@@ -1443,7 +1443,22 @@ def delete_old_docs_daily1():
 
 	
 	frappe.db.sql ("""DELETE from `tabError Log`
-		where datediff(now(),creation) > 0""")
+		where datediff(now(),creation) > 10""")
+	
+	frappe.db.sql ("""DELETE from `tabView Log`
+		where datediff(now(),creation) > 10""")
+
+	frappe.db.sql ("""DELETE from `tabAccess Log`
+		where datediff(now(),creation) > 30""")
+
+	frappe.db.sql ("""DELETE from `tabPatch Log`
+		where datediff(now(),creation) > 30""")
+
+	frappe.db.sql ("""DELETE from `tabNotification Log`
+		where datediff(now(),creation) > 10""")
+
+	frappe.db.sql ("""DELETE from `tabTransaction Log`
+		where datediff(now(),creation) > 90""")
 
 	frappe.db.sql ("""DELETE from `tabVersion`
 		where datediff(now(),creation) > 90""")
@@ -1452,10 +1467,10 @@ def delete_old_docs_daily1():
 		where datediff(now(),creation) > 90""")
 
 	frappe.db.sql ("""DELETE from `tabError Snapshot`
-		where datediff(now(),creation) > 0""")
+		where datediff(now(),creation) > 3""")
 
 	frappe.db.sql ("""DELETE from `tabDeleted Document`
-		where datediff(now(),creation) > 3""")
+		where datediff(now(),creation) > 90""")
 
 
 @frappe.whitelist()

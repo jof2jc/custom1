@@ -1,0 +1,129 @@
+{
+ "creation": "2020-12-29 09:30:00.535824",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type",
+  "end_point",
+  "method",
+  "valid_status",
+  "cb_01",
+  "disabled",
+  "authorization_code",
+  "refresh_token",
+  "access_token",
+  "header_and_body_section",
+  "header",
+  "body",
+  "order_detail_section",
+  "order_detail_json",
+  "order_item_json"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nGet Order List\nGet Order Detail\nUpdate Order Status\nUpdate Tracking No\nUpdate Stock\nUpdate Price\nGet Payment\nAccess Token\nRefresh Token",
+   "reqd": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "end_point",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "End Point",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Method",
+   "options": "\nPOST\nGET\nPUT\nDELETE"
+  },
+  {
+   "columns": 3,
+   "fieldname": "valid_status",
+   "fieldtype": "Data",
+   "label": "Valid Status"
+  },
+  {
+   "fieldname": "cb_01",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "authorization_code",
+   "fieldtype": "Data",
+   "label": "Authorization Code"
+  },
+  {
+   "fieldname": "refresh_token",
+   "fieldtype": "Data",
+   "label": "Refresh Token"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Data",
+   "label": "Access Token"
+  },
+  {
+   "fieldname": "header_and_body_section",
+   "fieldtype": "Section Break",
+   "label": "Header and Body"
+  },
+  {
+   "default": "{\"Content-Type\":\"application/json\",\"Authorization\":\"4983325583ef6c3252d991cef442527eb0819ede13b15e595e88b33423b97ead\"}",
+   "fieldname": "header",
+   "fieldtype": "Small Text",
+   "label": "Header"
+  },
+  {
+   "default": "{\"partner_id\":\"cint(api_doc.partner_id)\",\"shop_id\":\"cint(api_doc.shop_id)\",\"timestamp\":\"cint(datetime.datetime.utcnow().replace(microsecond=0).timestamp())\",\"order_status\":\"cstr('ALL')\",\"create_time_from\":\"cint(add_to_date(now_datetime(),minutes=-30,as_datetime=True).replace(microsecond=0).timestamp())\",\"create_time_to\":\"cint(now_datetime().replace(microsecond=0).timestamp())\"}",
+   "fieldname": "body",
+   "fieldtype": "Small Text",
+   "label": "Body"
+  },
+  {
+   "collapsible_depends_on": "eval:doc.order_detail_json",
+   "depends_on": "eval:doc.type==\"Get Order Detail\"",
+   "fieldname": "order_detail_section",
+   "fieldtype": "Section Break",
+   "label": "Order Detail"
+  },
+  {
+   "default": "{\"docstatus\":\"1\",\"customer\":\"api_doc.name\",\"no_online_order\":\"d.get('ordersn')\",\"order_status\":\"d.get('order_status')\",\"transaction_date\":\"order_date\",\"delivery_date\":\"delivery_date\",\"order_date\":\"order_date\",\"currency\":\"d.get('currency')\",\"awb_no\":\"d.get('tracking_no')\",\"courier\":\"d.get('shipping_carrier')\",\"recipient\":\"d.get('recipient_address').get('name')\",\"recipient_number\":\"d.get('recipient_address').get('phone')\",\"ship_to\":\"d.get('recipient_address').get('full_address')\",\"buyer_id\":\"d.get('buyer_username')\",\"shipping_fee\":\"d.get('actual_shipping_cost')\",\"dropshipper\":\"d.get('dropshipper')\",\"buyer_notes\":\"d.get('message_to_seller')\",\"seller_notes\":\"d.get('note')\",\"pending_remarks\":\"d.get('cancel_reason')\"}",
+   "fieldname": "order_detail_json",
+   "fieldtype": "Small Text",
+   "label": "Order Detail JSON"
+  },
+  {
+   "default": "[{\"parent\":\"so.name\",\"item_code\":\"item_code\",\"item_name\":\"item.get('item_name')\",\"qty\":\"item.get('variation_quantity_purchased')\",\"rate\":\"item.get('variation_discounted_price')\",\"weight_per_unit\":\"item.get('weight')\",\"weight_uom\":\"frappe.get_value('Item',item_code,'weight_uom') or 'Kg'\",\"total_weight\":\"item.get('weight') * item.get('variation_quantity_purchased')\"}]",
+   "fieldname": "order_item_json",
+   "fieldtype": "Small Text",
+   "label": "Order Item JSON"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-01-24 16:43:05.707397",
+ "modified_by": "Administrator",
+ "module": "Marketplace Flow",
+ "name": "Marketplace API End Point",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "restrict_to_domain": "Education",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

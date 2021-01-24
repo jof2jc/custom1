@@ -285,7 +285,12 @@ scheduler_events = {
 	"daily": [
  		"custom1.custom1.custom1.delete_old_docs_daily1",
 		"custom1.custom1.custom1.update_default_fiscal_year"
-	]
+	],
+	"cron": {
+        	"*/5 * * * *": [
+	            "custom1.marketplace_flow.marketplace_integration.run_get_marketplace_order_list"
+        	]
+    	}
 }
 # 	"daily": [
 # 		"custom1.tasks.daily"

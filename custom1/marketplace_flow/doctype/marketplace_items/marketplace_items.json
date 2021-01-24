@@ -1,0 +1,49 @@
+{
+ "creation": "2020-12-28 17:34:39.453894",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "marketplace_store",
+  "item_id",
+  "variant_id"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "marketplace_store",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Marketplace Store",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "item_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "variant_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Variant ID"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-01-24 16:43:15.232601",
+ "modified_by": "Administrator",
+ "module": "Marketplace Flow",
+ "name": "Marketplace Items",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "restrict_to_domain": "Education",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
